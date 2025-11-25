@@ -350,11 +350,7 @@
         "action": "hijack-dns"
       },
       {
-        "rule_set": [
-          "private_DNS",
-          "httpdns",
-          "pcdn"
-        ],
+        "rule_set": "httpdns"
         "action": "reject",
         "no_drop": true
       },
@@ -472,16 +468,6 @@
         "type": "remote",
         "tag": "steam-cn",
         "url": "https://gh-proxy.com/https://raw.githubusercontent.com/DDCHlsq/sing-ruleset/ruleset/steamcn.srs"
-      },
-      {
-        "type": "local",
-        "tag": "private_DNS",
-        "path": "./rules/private_DNS.json"
-      },
-      {
-        "type": "local",
-        "tag": "pcdn",
-        "path": "./rules/pcdn.json"
       }
     ],
     "final": "国外代理",
