@@ -43,19 +43,19 @@
         "domain_keyword": ".",
         "server": "alidns"
       },
-//      {
-//        "query_type": "AAAA",
-//        "clash_mode": "ml模式",
-//        "action": "predefined",
-//        "rcode": "NXDOMAIN"
-//      },
       {
-        "query_type": [
-          "A",
-          "AAAA"
-        ],
-        "server": "fakeip"
+        "query_type": "AAAA",
+        "clash_mode": "ml模式",
+        "action": "predefined",
+        "rcode": "NXDOMAIN"
       },
+//      {
+//        "query_type": [
+//          "A",
+//          "AAAA"
+//        ],
+//        "server": "fakeip"
+//      },
       {
         "domain_keyword": [
           "bing.com",
@@ -80,12 +80,15 @@
         "server": "alidns"
       },
       {
-        "rule_set": "geosite-cn",
+        "rule_set": [ 
+          "geosite-cn",
+          "steam-cn"
+        ],
         "server": "alidns"
       }
     ],
     "final": "cloudflare",
-//    "disable_cache": true,
+    "disable_cache": true,
     "reverse_mapping": true
   },
   "inbounds": [
@@ -321,13 +324,13 @@
   ],
   "route": {
     "rules": [
-      {
-        "clash_mode": "ml模式",
-        "action": "resolve",
-        "server": "alidns",
+//      {
+//        "clash_mode": "ml模式",
+//        "action": "resolve",
+//        "server": "alidns",
 //        "disable_cache": true,
-        "strategy": "ipv4_only"
-      },
+//        "strategy": "ipv4_only"
+//      },
       {
         "ip_version": 6,
         "clash_mode": "ml模式",
@@ -433,7 +436,8 @@
       {
         "rule_set": [
           "geoip-cn",
-          "geosite-cn"
+          "geosite-cn",
+          "steam-cn"
         ],
         "outbound": "国内代理"
       }
