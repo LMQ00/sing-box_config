@@ -80,10 +80,7 @@
         "server": "alidns"
       },
       {
-        "rule_set": [
-          "geosite-cn",
-          "steam-cn"
-        ],
+        "rule_set": "geosite-cn",
         "server": "alidns"
       }
     ],
@@ -436,8 +433,7 @@
       {
         "rule_set": [
           "geoip-cn",
-          "geosite-cn",
-          "steam-cn"
+          "geosite-cn"
         ],
         "outbound": "国内代理"
       }
