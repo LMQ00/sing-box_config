@@ -49,6 +49,14 @@
         "action": "predefined",
         "rcode": "NXDOMAIN"
       },
+      {
+        "rule_set": [
+          "Ad1",
+          "Ad2"
+        ],
+        "action": "reject",
+        "method": "drop"
+      },
 //      {
 //        "query_type": [
 //          "A",
