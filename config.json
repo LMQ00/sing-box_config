@@ -346,7 +346,13 @@
         "no_drop": true
       },
       {
-        "action": "sniff"
+        "action": "sniff",
+        "sniffer": [
+          "dns",
+          "quic",
+          "dtls",
+          "stun"
+        ]
       },
       {
         "type": "logical",
