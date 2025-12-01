@@ -297,7 +297,7 @@
     {
       "type": "remote",
       "tag": "订阅1",
-      "url": "",
+      "url": "机场链接",
       "update_interval": "2h0m0s",
       "download_detour": "direct",
       "health_check": {
@@ -308,7 +308,7 @@
     {
       "type": "remote",
       "tag": "订阅2",
-      "url": "",
+      "url": "机场链接",
       "update_interval": "2h0m0s",
       "download_detour": "direct",
       "health_check": {
@@ -319,7 +319,7 @@
     {
       "type": "remote",
       "tag": "订阅3",
-      "url": "",
+      "url": "机场链接",
       "update_interval": "2h0m0s",
       "download_detour": "direct",
       "health_check": {
@@ -366,7 +366,7 @@
         "action": "hijack-dns"
       },
       {
-        "rule_set": "httpdns"
+        "rule_set": "httpdns",
         "action": "reject",
         "no_drop": true
       },
@@ -481,16 +481,6 @@
         "type": "remote",
         "tag": "games-cn",
         "url": "https://gh-proxy.com/https://raw.githubusercontent.com/QuixoticHeart/rule-set/refs/heads/ruleset/singbox/version3/games-cn.srs"
-      },
-      {
-        "type": "local",
-        "tag": "private_DNS",
-        "path": "./rules/private_DNS.json"
-      },
-      {
-        "type": "local",
-        "tag": "pcdn",
-        "path": "./rules/pcdn.json"
       }
     ],
     "final": "国外代理",

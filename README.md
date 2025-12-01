@@ -5,12 +5,15 @@ https://github.com/reF1nd/sing-box
 
 使用方法
 
+先将bin文件夹里的sing-box内核移动到文件夹根目录，然后去config.json中搜索 "机场链接"，填入订阅链接替换。
+
 执行以下命令：
 
 ```bash
-sudo sing-box -D ./ -C ./ run
+chmod 755 ./sing-box
+sudo ./sing-box -D ./ -C ./ run
 ```
 
 说明
 
-sing-box文件夹有内核文件
+启动完后浏览器打开  http://127.0.0.1:9090/ui/ 启动面板
