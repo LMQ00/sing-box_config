@@ -50,10 +50,7 @@
         "rcode": "NXDOMAIN"
       },
       {
-        "rule_set": [
-          "Ad1",
-          "Ad2"
-        ],
+        "rule_set": "Ad1",
         "action": "reject",
         "method": "drop"
       },
@@ -83,7 +80,8 @@
       {
         "rule_set": [ 
           "geosite-cn",
-          "steam-cn"
+          "games-cn",
+          "fakeip-filter"
         ],
         "server": "alidns"
       },
@@ -109,7 +107,7 @@
     {
       "type": "tun",
       "tag": "tun-in",
-      "stack": "mixed",
+      "stack": "gvisor",
       "address": [
         "172.18.0.1/30",
         "fdfe:dcba:9876::1/126"
@@ -373,10 +371,7 @@
         "no_drop": true
       },
       {
-        "rule_set": [
-          "Ad1",
-          "Ad2"
-        ],
+        "rule_set": "Ad1",
         "action": "reject",
         "method": "drop"
       },
@@ -451,7 +446,7 @@
         "rule_set": [
           "geoip-cn",
           "geosite-cn",
-          "steam-cn"
+          "games-cn"
         ],
         "outbound": "国内代理"
       }
@@ -460,12 +455,7 @@
       {
         "type": "remote",
         "tag": "Ad1",
-        "url": "https://gh-proxy.com/https://raw.githubusercontent.com/CHIZI-0618/v2ray-rules-dat/release/singbox_rule_set/geosite-category-ads-all.srs"
-      },
-      {
-        "type": "remote",
-        "tag": "Ad2",
-        "url": "https://gh-proxy.com/https://raw.githubusercontent.com/tmby/sing-box-dns-filter/refs/heads/main/geosite-dnsblock.srs"
+        "url": "https://gh-proxy.com/https://raw.githubusercontent.com/QuixoticHeart/rule-set/refs/heads/ruleset/singbox/version3/adrules.srs"
       },
       {
         "type": "remote",
@@ -475,17 +465,32 @@
       {
         "type": "remote",
         "tag": "geoip-cn",
-        "url": "https://gh-proxy.com/https://github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/sing/geo-lite/geoip/cn.srs"
+        "url": "https://gh-proxy.com/https://raw.githubusercontent.com/QuixoticHeart/rule-set/refs/heads/ruleset/singbox/version3/cncidr.srs"
       },
       {
         "type": "remote",
         "tag": "geosite-cn",
-        "url": "https://gh-proxy.com/https://github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/sing/geo-lite/geosite/cn.srs"
+        "url": "https://gh-proxy.com/https://raw.githubusercontent.com/QuixoticHeart/rule-set/refs/heads/ruleset/singbox/version3/cn.srs"
       },
       {
         "type": "remote",
-        "tag": "steam-cn",
-        "url": "https://gh-proxy.com/https://raw.githubusercontent.com/DDCHlsq/sing-ruleset/ruleset/steamcn.srs"
+        "tag": "fakeip-filter",
+        "url": "https://gh-proxy.com/https://raw.githubusercontent.com/QuixoticHeart/rule-set/refs/heads/ruleset/singbox/version3/fake-ip-filter.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "games-cn",
+        "url": "https://gh-proxy.com/https://raw.githubusercontent.com/QuixoticHeart/rule-set/refs/heads/ruleset/singbox/version3/games-cn.srs"
+      },
+      {
+        "type": "local",
+        "tag": "private_DNS",
+        "path": "./rules/private_DNS.json"
+      },
+      {
+        "type": "local",
+        "tag": "pcdn",
+        "path": "./rules/pcdn.json"
       }
     ],
     "final": "国外代理",
