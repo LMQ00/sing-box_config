@@ -10,8 +10,8 @@ https://github.com/reF1nd/sing-box
 执行以下命令：
 
 ```bash
-chmod 755 ./sing-box
-sudo ./sing-box -D ./ -C ./ run
+chmod +x ./sing-box
+sudo ./sing-box run -D ./ -c ./config.json
 ```
 
 说明
