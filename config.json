@@ -94,8 +94,7 @@
       }
     ],
     "final": "cloudflare",
-    "disable_cache": true,
-    "reverse_mapping": true
+    "disable_cache": true
   },
   "inbounds": [
   //   {
@@ -331,13 +330,6 @@
   ],
   "route": {
     "rules": [
-//      {
-//        "clash_mode": "ml模式",
-//        "action": "resolve",
-//        "server": "alidns",
-//        "disable_cache": true,
-//        "strategy": "ipv4_only"
-//      },
       {
         "ip_version": 6,
         "clash_mode": "ml模式",
@@ -419,6 +411,13 @@
         "clash_mode": "ml模式",
         "action": "reject",
         "method": "drop"
+      },
+      {
+        "clash_mode": "ml模式",
+        "action": "resolve",
+        "server": "alidns",
+        "disable_cache": true,
+        "strategy": "ipv4_only"
       },
       {
         "domain_keyword": [
