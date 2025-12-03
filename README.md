@@ -24,4 +24,4 @@ http://127.0.0.1:9090/ui/
 
 亦可用于android magisk模块，需设置为"core"(某些模块的代理模式)模式。并将tun_device项填"tun0"，否则可能无法分享热点。
 
-android模块推荐: "https://github.com/CHIZI-0618/box4magisk"
+android模块推荐: https://github.com/CHIZI-0618/box4magisk
