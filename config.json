@@ -45,7 +45,7 @@
       },
       {
         "query_type": "AAAA",
-        "clash_mode": "ml模式",
+        "clash_mode": "严格模式",
         "action": "predefined",
         "rcode": "NXDOMAIN"
       },
@@ -332,7 +332,7 @@
     "rules": [
       {
         "ip_version": 6,
-        "clash_mode": "ml模式",
+        "clash_mode": "严格模式",
         "action": "reject",
         "no_drop": true
       },
@@ -377,7 +377,7 @@
           "mcdn",
           "tracker"
         ],
-        "clash_mode": "ml模式",
+        "clash_mode": "严格模式",
         "action": "reject",
         "method": "drop"
       },
@@ -396,7 +396,7 @@
             ]
           },
           {
-            "clash_mode": "ml模式"
+            "clash_mode": "严格模式"
           }
         ],
         "action": "reject",
@@ -408,12 +408,12 @@
           "quic",
           "dtls"
         ],
-        "clash_mode": "ml模式",
+        "clash_mode": "严格模式",
         "action": "reject",
         "method": "drop"
       },
       {
-        "clash_mode": "ml模式",
+        "clash_mode": "严格模式",
         "action": "resolve",
         "server": "alidns",
         "disable_cache": true,
