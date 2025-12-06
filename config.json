@@ -79,8 +79,13 @@
       },
       {
         "rule_set": [ 
+          "games-cn"
+        ],
+        "server": "alidns"
+      },
+      {
+        "rule_set": [ 
           "geosite-cn",
-          "games-cn",
           "fakeip-filter"
         ],
         "server": "alidns"
@@ -337,13 +342,7 @@
         "no_drop": true
       },
       {
-        "action": "sniff",
-        "sniffer": [
-          "dns",
-          "quic",
-          "dtls",
-          "stun"
-        ]
+        "action": "sniff"
       },
       {
         "type": "logical",
@@ -444,12 +443,17 @@
       },
       {
         "rule_set": [
-          "geoip-cn",
-          "geosite-cn",
           "games-cn"
         ],
         "outbound": "国内代理"
-      }
+      },
+      {
+        "rule_set": [
+          "geoip-cn",
+          "geosite-cn"
+        ],
+        "outbound": "国内代理"
+      }     
     ],
     "rule_set": [
       {
