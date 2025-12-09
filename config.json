@@ -44,12 +44,6 @@
         "server": "alidns"
       },
       {
-        "query_type": "AAAA",
-        "clash_mode": "严格模式",
-        "action": "predefined",
-        "rcode": "NXDOMAIN"
-      },
-      {
         "rule_set": "Ad1",
         "action": "reject",
         "method": "drop"
@@ -99,6 +93,7 @@
       }
     ],
     "final": "cloudflare",
+    "strategy": "ipv4_only",
     "disable_cache": true
   },
   "inbounds": [
@@ -111,7 +106,7 @@
     {
       "type": "tun",
       "tag": "tun-in",
-      "stack": "gvisor",
+      "stack": "system",
       "address": [
         "172.18.0.1/30",
         "fdfe:dcba:9876::1/126"
@@ -337,12 +332,16 @@
     "rules": [
       {
         "ip_version": 6,
-        "clash_mode": "严格模式",
         "action": "reject",
         "no_drop": true
       },
       {
         "action": "sniff"
+      },
+      {
+        "action": "resolve",
+        "server": "alidns",
+        "disable_cache": true
       },
       {
         "type": "logical",
@@ -358,7 +357,12 @@
         "action": "hijack-dns"
       },
       {
-        "rule_set": "httpdns",
+        "rule_set": [
+          "private_DNS",
+          "httpdns",
+          "pcdn",
+          "tg_bad"
+        ],
         "action": "reject",
         "no_drop": true
       },
@@ -410,13 +414,6 @@
         "clash_mode": "严格模式",
         "action": "reject",
         "method": "drop"
-      },
-      {
-        "clash_mode": "严格模式",
-        "action": "resolve",
-        "server": "alidns",
-        "disable_cache": true,
-        "strategy": "ipv4_only"
       },
       {
         "domain_keyword": [
@@ -485,6 +482,21 @@
         "type": "remote",
         "tag": "games-cn",
         "url": "https://gh-proxy.com/https://raw.githubusercontent.com/QuixoticHeart/rule-set/refs/heads/ruleset/singbox/version3/games-cn.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "private_DNS",
+        "url": "https://gh-proxy.com/https://raw.githubusercontent.com/LMQ00/sing-box_config/refs/heads/main/rules/private_DNS.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "pcdn",
+        "url": "https://gh-proxy.com/https://raw.githubusercontent.com/LMQ00/sing-box_config/refs/heads/main/rules/pcdn.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "tg_bad",
+        "url": "https://gh-proxy.com/https://raw.githubusercontent.com/LMQ00/sing-box_config/refs/heads/main/rules/tg_bad.srs"
       }
     ],
     "final": "国外代理",
