@@ -49,11 +49,18 @@
         "method": "drop"
       },
       {
+        "rule_set": [ 
+          "geosite-cn",
+          "fakeip-filter"
+        ],
+        "server": "alidns"
+      },
+      {
         "domain_keyword": [
           "bing.com",
           "google"
         ],
-        "server": "cloudflare"
+        "server": "fakeip"
       },
       {
         "domain_keyword": [
@@ -74,13 +81,6 @@
       {
         "rule_set": [ 
           "games-cn"
-        ],
-        "server": "alidns"
-      },
-      {
-        "rule_set": [ 
-          "geosite-cn",
-          "fakeip-filter"
         ],
         "server": "alidns"
       },
@@ -339,11 +339,6 @@
         "action": "sniff"
       },
       {
-        "action": "resolve",
-        "server": "alidns",
-        "disable_cache": true
-      },
-      {
         "type": "logical",
         "mode": "or",
         "rules": [
@@ -360,8 +355,7 @@
         "rule_set": [
           "private_DNS",
           "httpdns",
-          "pcdn",
-          "tg_bad"
+          "pcdn"
         ],
         "action": "reject",
         "no_drop": true
@@ -440,14 +434,20 @@
       },
       {
         "rule_set": [
-          "games-cn"
+          "games-cn",
+          "geosite-cn"
         ],
         "outbound": "国内代理"
       },
       {
+        "action": "resolve",
+        "server": "alidns",
+        "disable_cache": true
+      },
+      {
         "rule_set": [
           "geoip-cn",
-          "geosite-cn"
+          "tg_bad"
         ],
         "outbound": "国内代理"
       }     
@@ -461,7 +461,7 @@
       {
         "type": "remote",
         "tag": "httpdns",
-        "url": "https://gh-proxy.com/https://github.com/QuixoticHeart/rule-set/raw/refs/heads/ruleset/singbox/version4/httpdns.srs"
+        "url": "https://gh-proxy.com/https://github.com/QuixoticHeart/rule-set/raw/refs/heads/ruleset/singbox/version3/httpdns.srs"
       },
       {
         "type": "remote",
