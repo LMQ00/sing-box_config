@@ -28,6 +28,8 @@ http://127.0.0.1:9090/ui/
 
 启动面板
 
+如果是没有ui的tty环境，则可以尝试用其他设备在浏览器打开http://无ui设备的ip:9090/ui/
+
 亦可用于android magisk模块，需设置为"core"(某些模块的代理模式)模式。并将tun_device项填"tun0"，否则可能无法分享热点。
 
 android模块推荐: https://github.com/CHIZI-0618/box4magisk
