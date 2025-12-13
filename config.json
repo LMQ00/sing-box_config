@@ -166,7 +166,7 @@
         "订阅1"
       ],
       "include": "CN|电信|联通|移动",
-      "exclude": "禁止|剩余|到期|以下|官网|订阅",
+      "exclude": "禁止|剩余|到期|以下|官网",
       "interrupt_exist_connections": true
     },
     {
@@ -177,7 +177,7 @@
         "订阅1"
       ],
       "include": "CN|电信|联通|移动",
-      "exclude": "tcp|禁止|剩余|到期|以下|官网|订阅",
+      "exclude": "tcp|禁止|剩余|到期|以下|官网",
       "interval": "5m0s",
       "tolerance": 50,
       "interrupt_exist_connections": true
@@ -189,7 +189,7 @@
       "providers": [
         "订阅1"
       ],
-      "exclude": "CN|电信|联通|移动|禁止|剩余|到期|以下|官网|订阅",
+      "exclude": "CN|电信|联通|移动|禁止|剩余|到期|以下|官网",
       "interrupt_exist_connections": true
     },
     {
@@ -199,7 +199,7 @@
       "providers": [
         "订阅1"
       ],
-      "exclude": "CN|电信|联通|移动|tcp|禁止|剩余|到期|以下|官网|订阅",
+      "exclude": "CN|电信|联通|移动|tcp|禁止|剩余|到期|以下|官网",
       "interval": "5m0s",
       "tolerance": 50,
       "interrupt_exist_connections": true
@@ -212,7 +212,7 @@
         "订阅2"
       ],
       "include": "CN|电信|联通|移动",
-      "exclude": "禁止|剩余|到期|以下|官网|订阅",
+      "exclude": "禁止|剩余|到期|以下|官网",
       "interrupt_exist_connections": true
     },
     {
@@ -223,7 +223,7 @@
         "订阅2"
       ],
       "include": "CN|电信|联通|移动",
-      "exclude": "tcp|禁止|剩余|到期|以下|官网|订阅",
+      "exclude": "tcp|禁止|剩余|到期|以下|官网",
       "interval": "5m0s",
       "tolerance": 50,
       "interrupt_exist_connections": true
@@ -235,7 +235,7 @@
       "providers": [
         "订阅2"
       ],
-      "exclude": "CN|电信|联通|移动|禁止|剩余|到期|以下|官网|订阅",
+      "exclude": "CN|电信|联通|移动|禁止|剩余|到期|以下|官网",
       "interrupt_exist_connections": true
     },
     {
@@ -245,7 +245,7 @@
       "providers": [
         "订阅2"
       ],
-      "exclude": "CN|电信|联通|移动|tcp|禁止|剩余|到期|以下|官网|订阅",
+      "exclude": "CN|电信|联通|移动|tcp|禁止|剩余|到期|以下|官网",
       "interval": "5m0s",
       "tolerance": 50,
       "interrupt_exist_connections": true
@@ -257,7 +257,7 @@
       "providers": [
         "订阅3"
       ],
-      "exclude": "禁止|剩余|到期|以下|官网|订阅",
+      "exclude": "禁止|剩余|到期|以下|官网",
       "interrupt_exist_connections": true
     },
     {
@@ -267,7 +267,7 @@
       "providers": [
         "订阅3"
       ],
-      "exclude": "CN|电信|联通|移动|tcp|禁止|剩余|到期|以下|官网|订阅",
+      "exclude": "CN|电信|联通|移动|tcp|禁止|剩余|到期|以下|官网",
       "interval": "5m0s",
       "tolerance": 50,
       "interrupt_exist_connections": true

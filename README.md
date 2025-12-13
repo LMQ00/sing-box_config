@@ -7,11 +7,17 @@ https://github.com/reF1nd/sing-box
 
 先将bin文件夹里的sing-box内核移动到文件夹根目录，然后去config.json中搜索 "机场链接"，填入订阅链接替换。
 
-执行以下命令：
+Linux执行以下命令：
 
 ```bash
 chmod +x ./sing-box
 sudo ./sing-box run -D ./ -c ./config.json
+```
+
+Windows需要右键sing-box.exe，点击兼容性-以管理员权限运行。然后执行以下命令：
+
+```bash
+sudo ./sing-box.exe run -D ./ -c ./config.json
 ```
 
 说明
