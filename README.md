@@ -1,35 +1,68 @@
 自用 sing-box 配置
 
-适用于有 provider 的内核，如：
-https://github.com/reF1nd/sing-box
+本配置适用于带 provider 功能 的 sing-box 内核，例如：
+👉 [reF1nd/sing-box](https://github.com/reF1nd/sing-box)
 
-使用方法
+---
 
-先将bin文件夹里的sing-box内核移动到文件夹根目录，然后去config.json中搜索 "机场链接"，填入订阅链接替换。
+🚀 使用方法
 
-Linux执行以下命令：
+1. 准备内核
+
+将 bin/ 文件夹中对应系统的 sing-box 内核 移动到项目根目录。
+
+2. 配置订阅链接
+
+打开 config.json 文件，搜索 "机场链接"，将其替换为你的订阅链接。
+
+---
+
+3. 启动服务
+
+Linux
 
 ```bash
 chmod +x ./sing-box
 sudo ./sing-box run -D ./ -c ./config.json
 ```
 
-Windows需要右键sing-box.exe，点击兼容性-以管理员权限运行。然后在文件夹根目录打开cmd或powershell执行以下命令：
+Windows
+
+1. 右键 sing-box.exe → 属性 → 兼容性 → ✅ 以管理员身份运行
+2. 在项目根目录打开 CMD 或 PowerShell：
 
 ```bash
 ./sing-box.exe run -D ./ -c ./config.json
 ```
 
-说明
+---
 
-启动完后浏览器打开  
+🌐 访问面板
 
-http://127.0.0.1:9090/ui/
+启动完成后，在浏览器中打开：
+🔗 http://127.0.0.1:9090/ui/
 
-启动面板
+---
 
-如果是没有ui的tty环境，则可以尝试用其他设备在浏览器打开http://无ui设备的ip:9090/ui/
+📱 无 UI 设备（如 TTY 环境）
 
-亦可用于android magisk模块，需设置为"core"(某些模块的代理模式)模式。并将tun_device项填"tun0"，否则可能无法分享热点。
+可在同一局域网内的其他设备浏览器中访问：
 
-android模块推荐: https://github.com/CHIZI-0618/box4magisk
+```
+http://<无UI设备的IP>:9090/ui/
+```
+
+---
+
+🤖 Android 使用说明（Magisk 模块）
+
+推荐模块
+
+✅ [CHIZI-0618/box4magisk](https://github.com/CHIZI-0618/box4magisk)
+
+配置要点：
+
+· 代理模式选择 "core"（某些模块称为“核心模式”）
+· tun_device 项填写 "tun0"（否则可能无法分享热点）
+
+---
