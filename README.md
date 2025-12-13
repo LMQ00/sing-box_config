@@ -14,10 +14,10 @@ chmod +x ./sing-box
 sudo ./sing-box run -D ./ -c ./config.json
 ```
 
-Windows需要右键sing-box.exe，点击兼容性-以管理员权限运行。然后执行以下命令：
+Windows需要右键sing-box.exe，点击兼容性-以管理员权限运行。然后在文件夹根目录打开cmd或powershell执行以下命令：
 
 ```bash
-sudo ./sing-box.exe run -D ./ -c ./config.json
+./sing-box.exe run -D ./ -c ./config.json
 ```
 
 说明
