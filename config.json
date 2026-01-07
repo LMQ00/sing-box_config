@@ -375,7 +375,7 @@
         ],
         "clash_mode": "严格模式",
         "action": "reject",
-        "method": "drop"
+        "no_drop": true
       },
       {
         "type": "logical",
@@ -396,7 +396,7 @@
           }
         ],
         "action": "reject",
-        "method": "drop"
+        "no_drop": true
       },
       {
         "protocol": [
@@ -406,7 +406,7 @@
         ],
         "clash_mode": "严格模式",
         "action": "reject",
-        "method": "drop"
+        "no_drop": true
       },
       {
         "domain_keyword": [
