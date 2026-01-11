@@ -292,39 +292,30 @@
       "interrupt_exist_connections": true
     }
   ],
-  "providers": [
+  "outbound_providers": [
     {
       "type": "remote",
       "tag": "订阅1",
-      "url": "机场链接",
-      "update_interval": "2h0m0s",
+      "download_url": "机场链接",
+      "download_interval": "2h",
       "download_detour": "direct",
-      "health_check": {
-        "enabled": true,
-        "url": "https://www.gstatic.com/generate_204"
-      }
+      "path": "./国际.json"
     },
     {
       "type": "remote",
       "tag": "订阅2",
-      "url": "机场链接",
-      "update_interval": "2h0m0s",
+      "download_url": "机场链接",
+      "download_interval": "2h",
       "download_detour": "direct",
-      "health_check": {
-        "enabled": true,
-        "url": "https://www.gstatic.com/generate_204"
-      }
+      "path": "./快跑.json"
     },
     {
       "type": "remote",
       "tag": "订阅3",
-      "url": "机场链接",
-      "update_interval": "2h0m0s",
+      "download_url": "机场链接",
+      "download_interval": "2h",
       "download_detour": "direct",
-      "health_check": {
-        "enabled": true,
-        "url": "https://www.gstatic.com/generate_204"
-      }
+      "path": "./精灵.json"
     }
   ],
   "route": {
@@ -521,6 +512,7 @@
       "external_controller": "0.0.0.0:9090",
       "external_ui": "dashboard",
       "external_ui_download_url": "https://gh-proxy.com/https://github.com/Zephyruso/zashboard/releases/latest/download/dist.zip"
-    }
+    },
+    "urltest_unified_delay": true
   }
 }
