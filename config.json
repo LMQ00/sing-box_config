@@ -92,7 +92,7 @@
         "server": "fakeip"
       }
     ],
-    "final": "cloudflare",
+    "final": "google",
     "strategy": "ipv4_only",
     "disable_cache": true
   },
@@ -431,7 +431,7 @@
       },
       {
         "action": "resolve",
-        "server": "alidns",
+//        "server": "alidns",
         "disable_cache": true
       },
       {
