@@ -19,7 +19,7 @@
 
 3. 启动服务
 
-Linux
+Macos/Linux
 
 ```bash
 chmod +x ./sing-box
