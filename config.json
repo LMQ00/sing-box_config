@@ -292,30 +292,39 @@
       "interrupt_exist_connections": true
     }
   ],
-  "outbound_providers": [
+  "providers": [
     {
       "type": "remote",
       "tag": "订阅1",
-      "download_url": "机场链接",
-      "download_interval": "2h",
+      "url": "机场链接",
+      "update_interval": "2h0m0s",
       "download_detour": "direct",
-      "path": "./国际.json"
+      "health_check": {
+        "enabled": true,
+        "url": "https://www.gstatic.com/generate_204"
+      }
     },
     {
       "type": "remote",
       "tag": "订阅2",
-      "download_url": "机场链接",
-      "download_interval": "2h",
+      "url": "机场链接",
+      "update_interval": "2h0m0s",
       "download_detour": "direct",
-      "path": "./快跑.json"
+      "health_check": {
+        "enabled": true,
+        "url": "https://www.gstatic.com/generate_204"
+      }
     },
     {
       "type": "remote",
       "tag": "订阅3",
-      "download_url": "机场链接",
-      "download_interval": "2h",
+      "url": "机场链接",
+      "update_interval": "2h0m0s",
       "download_detour": "direct",
-      "path": "./精灵.json"
+      "health_check": {
+        "enabled": true,
+        "url": "https://www.gstatic.com/generate_204"
+      }
     }
   ],
   "route": {
@@ -512,7 +521,6 @@
       "external_controller": "0.0.0.0:9090",
       "external_ui": "dashboard",
       "external_ui_download_url": "https://gh-proxy.com/https://github.com/MetaCubeX/yacd/archive/gh-pages.zip"
-    },
-    "urltest_unified_delay": true
+    }
   }
 }
