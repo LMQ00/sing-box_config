@@ -296,7 +296,7 @@
     {
       "type": "remote",
       "tag": "订阅1",
-      "url": "机场链接",
+      "url": "订阅链接",
       "update_interval": "2h0m0s",
       "download_detour": "direct",
       "health_check": {
@@ -307,7 +307,7 @@
     {
       "type": "remote",
       "tag": "订阅2",
-      "url": "机场链接",
+      "url": "订阅链接",
       "update_interval": "2h0m0s",
       "download_detour": "direct",
       "health_check": {
@@ -318,7 +318,7 @@
     {
       "type": "remote",
       "tag": "订阅3",
-      "url": "机场链接",
+      "url": "订阅链接",
       "update_interval": "2h0m0s",
       "download_detour": "direct",
       "health_check": {
