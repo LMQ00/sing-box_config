@@ -3,7 +3,7 @@
 cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")" || exit 1
 
 CONFIG_FILE="config.json"
-PLACEHOLDER="机场链接" 
+PLACEHOLDER="订阅链接" 
 
 BIN_DIR="./bin"
 TARGET_BINARY="./sing-box"
@@ -14,7 +14,6 @@ if [[ -d "$BIN_DIR" ]]; then
     OS=""
     ARCH=""
     
-    # 检测操作系统
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         OS="linux"
     elif [[ "$OSTYPE" == "darwin"* ]]; then
@@ -24,7 +23,6 @@ if [[ -d "$BIN_DIR" ]]; then
         OS="unknown"
     fi
 
-    # 检测架构
     MACHINE_TYPE=$(uname -m)
     if [[ "$MACHINE_TYPE" == "x86_64" ]]; then
         ARCH="amd64"
@@ -68,7 +66,6 @@ if [[ ! -f "./sing-box" ]]; then
     exit 1
 fi
 
-# 菜单显示
 echo "=================================="
 echo "   sing-box 管理脚本"
 echo "=================================="
@@ -95,7 +92,6 @@ case $choice in
         
         chmod +x ./sing-box
         
-        # 启动 sing-box（后台运行）
         sudo ./sing-box run -c "$CONFIG_FILE" -D ./ > ./run/sing-box.log 2>&1 &
         SING_BOX_PID=$!
         echo "mPid: $SING_BOX_PID"
@@ -107,7 +103,6 @@ case $choice in
             if [[ -d "./dashboard" ]] && [[ -n "$(ls -A ./dashboard 2>/dev/null)" ]]; then
                 echo "✅ 检测到 ./dashboard 中有文件，正在执行节点切换..."
                 
-                # 执行一次 cURL
                 curl -X PUT "http://127.0.0.1:9090/proxies/国外代理" \
                      -H "Content-Type: application/json" \
                      -d '{"name":"订阅1国外自动"}'
