@@ -5,6 +5,57 @@ cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")" || exit 1
 CONFIG_FILE="config.json"
 PLACEHOLDER="机场链接" 
 
+BIN_DIR="./bin"
+TARGET_BINARY="./sing-box"
+
+if [[ -d "$BIN_DIR" ]]; then
+    echo "📁 检测到 ./bin 目录，正在自动部署 sing-box 核心..."
+
+    OS=""
+    ARCH=""
+    
+    # 检测操作系统
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        OS="linux"
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        OS="darwin"
+    else
+        echo "⚠️  警告：无法识别的操作系统 ($OSTYPE)，跳过自动部署。"
+        OS="unknown"
+    fi
+
+    # 检测架构
+    MACHINE_TYPE=$(uname -m)
+    if [[ "$MACHINE_TYPE" == "x86_64" ]]; then
+        ARCH="amd64"
+    elif [[ "$MACHINE_TYPE" == "aarch64" ]] || [[ "$MACHINE_TYPE" == "arm64" ]] || [[ "$MACHINE_TYPE" == "armv8"* ]]; then
+        ARCH="arm64"
+    else
+        echo "⚠️  警告：无法识别的架构 ($MACHINE_TYPE)，跳过自动部署。"
+        ARCH="unknown"
+    fi
+
+    if [[ "$OS" != "unknown" ]] && [[ "$ARCH" != "unknown" ]]; then
+        SOURCE_PATH="$BIN_DIR/$OS-$ARCH/sing-box"
+        
+        if [[ -f "$SOURCE_PATH" ]]; then
+            echo "📦 正在从 $SOURCE_PATH 部署..."
+            cp "$SOURCE_PATH" "$TARGET_BINARY"
+            if [[ $? -eq 0 ]]; then
+                chmod +x "$TARGET_BINARY" 
+                echo "✅ sing-box ($OS-$ARCH) 部署成功！"
+            else
+                echo "❌ 错误：复制文件失败。"
+            fi
+        else
+            echo "❌ 错误：在 $BIN_DIR 中未找到 $OS-$ARCH/sing-box 文件。"
+            echo "    请检查文件夹内是否有拼写错误。"
+        fi
+    fi
+else
+    echo "ℹ️  ./bin 目录不存在，使用现有根目录下的 sing-box 文件。"
+fi
+
 if [[ ! -f "$CONFIG_FILE" ]]; then
     echo "❌ 错误：找不到配置文件 $CONFIG_FILE"
     echo "请确保脚本与 $CONFIG_FILE 放在同一目录下。"
@@ -13,6 +64,7 @@ fi
 
 if [[ ! -f "./sing-box" ]]; then
     echo "❌ 错误：找不到 sing-box 核心文件"
+    echo "请确保脚本与 sing-box 文件在同一目录下，或在 ./bin 目录下放置对应架构的文件。"
     exit 1
 fi
 
@@ -26,7 +78,7 @@ echo "=================================="
 read -p "请选择操作 (1 或 2): " choice
 
 case $choice in
-        1)
+    1)
         echo "🚀 正在启动 Sing-box 核心..."
         
         if grep -q "$PLACEHOLDER" "$CONFIG_FILE"; then
