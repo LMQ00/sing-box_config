@@ -111,7 +111,7 @@
         "172.18.0.1/30",
         "fdfe:dcba:9876::1/126"
       ],
-      "interface_name": "box0",
+      "interface_name": "tun0",
       "mtu": 9000,
       "auto_route": true,
       "strict_route": true
