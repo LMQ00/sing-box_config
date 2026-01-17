@@ -96,7 +96,7 @@ case $choice in
         chmod +x ./sing-box
         
         # 启动 sing-box（后台运行）
-        sudo ./sing-box -c "$CONFIG_FILE" -D ./ run > ./run/sing-box.log 2>&1 &
+        sudo ./sing-box run -c "$CONFIG_FILE" -D ./ > ./run/sing-box.log 2>&1 &
         SING_BOX_PID=$!
         echo "mPid: $SING_BOX_PID"
         echo "⏳ Sing-box 已启动，正在等待 ./dashboard 生成文件..."
