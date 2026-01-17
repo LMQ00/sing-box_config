@@ -72,8 +72,8 @@ fi
 echo "=================================="
 echo "   sing-box 管理脚本"
 echo "=================================="
-echo "1. 启动 sing-box 核心 (带检测)"
-echo "2. 更新机场订阅链接"
+echo "1. 启动 sing-box 核心"
+echo "2. 更新订阅链接"
 echo "=================================="
 read -p "请选择操作 (1 或 2): " choice
 
@@ -91,7 +91,7 @@ case $choice in
         fi
 
         mkdir -p ./run
-        rm -f ./run/error_sing-box.log 2>/dev/null
+        rm -rf ./run/*.log 2>/dev/null
         
         chmod +x ./sing-box
         
