@@ -1,0 +1,514 @@
+{
+  "log": {
+    "level": "error",
+    "output": "./run/error_sing-box.log",
+    "timestamp": true
+  },
+  "dns": {
+    "servers": [
+      {
+        "type": "https",
+        "tag": "alidns",
+        "detour": "国内代理",
+        "server": "223.5.5.5"
+      },
+      {
+        "type": "https",
+        "tag": "tencent",
+        "detour": "国内代理",
+        "server": "1.12.12.12"
+      },
+      {
+        "type": "https",
+        "tag": "cloudflare",
+        "detour": "国外代理",
+        "server": "1.1.1.1"
+      },
+      {
+        "type": "https",
+        "tag": "google",
+        "detour": "国外代理",
+        "server": "8.8.8.8"
+      },
+      {
+        "type": "fakeip",
+        "tag": "fakeip",
+        "inet4_range": "198.18.0.0/15",
+        "inet6_range": "fc00::/18"
+      }
+    ],
+    "rules": [
+      {
+        "clash_mode": "拉取模式",
+        "domain_keyword": ".",
+        "server": "alidns"
+      },
+      {
+        "rule_set": "Ad1",
+        "action": "reject",
+        "method": "drop"
+      },
+      {
+        "rule_set": [ 
+          "CN-site",
+          "steam-cn"
+        ],
+        "server": "alidns"
+      },
+      {
+        "domain_keyword": [
+          "bing.com",
+          "google"
+        ],
+        "server": "fakeip"
+      },
+      {
+        "domain_keyword": [
+          "weixin",
+          "qq.com",
+          "tencent",
+          "qpic",
+          "mmbiz",
+          "gtimg.com",
+          "flow.mxzu.net"
+        ],
+        "server": "alidns"
+      },
+      {
+        "domain_suffix": ".cn",
+        "server": "alidns"
+      },
+      {
+        "query_type": [
+          "A",
+          "AAAA"
+        ],
+        "server": "fakeip"
+      }
+    ],
+    "final": "google",
+    "strategy": "ipv4_only",
+    "disable_cache": true
+  },
+  "inbounds": [
+  //   {
+ //     "type": "tproxy",
+ //     "tag": "tproxy-in",
+ //     "listen": "::",
+ //     "listen_port": 1536
+ //   }
+    {
+      "type": "tun",
+      "tag": "tun-in",
+      "stack": "system",
+      "address": [
+        "172.18.0.1/30",
+        "fdfe:dcba:9876::1/126"
+      ],
+ //     "interface_name": "box0",
+      "mtu": 9000,
+      "auto_route": true,
+      "strict_route": true
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    },
+    {
+      "type": "selector",
+      "tag": "国内代理",
+      "outbounds": [
+        "direct",
+        "订阅1国内",
+        "订阅1国内自动",
+        "订阅2国内",
+        "订阅2国内自动"
+      ],
+      "providers": null,
+      "interrupt_exist_connections": true
+    },
+    {
+      "type": "selector",
+      "tag": "国外代理",
+      "outbounds": [
+        "direct",
+        "订阅1国外",
+        "订阅1国外自动",
+        "订阅2国外",
+        "订阅2国外自动",
+        "订阅3",
+        "订阅3自动",
+        "香港",
+        "香港自动",
+        "国内代理"
+      ],
+      "providers": null,
+      "interrupt_exist_connections": true
+    },
+    {
+      "type": "selector",
+      "tag": "订阅1国内",
+      "outbounds": null,
+      "providers": [
+        "订阅1"
+      ],
+      "include": "CN|电信|联通|移动",
+      "exclude": "禁止|剩余|到期|以下|官网",
+      "interrupt_exist_connections": true
+    },
+    {
+      "type": "urltest",
+      "tag": "订阅1国内自动",
+      "outbounds": null,
+      "providers": [
+        "订阅1"
+      ],
+      "include": "CN|电信|联通|移动",
+      "exclude": "tcp|禁止|剩余|到期|以下|官网",
+      "interval": "5m0s",
+      "tolerance": 50,
+      "interrupt_exist_connections": true
+    },
+    {
+      "type": "selector",
+      "tag": "订阅1国外",
+      "outbounds": null,
+      "providers": [
+        "订阅1"
+      ],
+      "exclude": "CN|电信|联通|移动|禁止|剩余|到期|以下|官网",
+      "interrupt_exist_connections": true
+    },
+    {
+      "type": "urltest",
+      "tag": "订阅1国外自动",
+      "outbounds": null,
+      "providers": [
+        "订阅1"
+      ],
+      "exclude": "CN|电信|联通|移动|tcp|禁止|剩余|到期|以下|官网",
+      "interval": "5m0s",
+      "tolerance": 50,
+      "interrupt_exist_connections": true
+    },
+    {
+      "type": "selector",
+      "tag": "订阅2国内",
+      "outbounds": null,
+      "providers": [
+        "订阅2"
+      ],
+      "include": "CN|电信|联通|移动",
+      "exclude": "禁止|剩余|到期|以下|官网",
+      "interrupt_exist_connections": true
+    },
+    {
+      "type": "urltest",
+      "tag": "订阅2国内自动",
+      "outbounds": null,
+      "providers": [
+        "订阅2"
+      ],
+      "include": "CN|电信|联通|移动",
+      "exclude": "tcp|禁止|剩余|到期|以下|官网",
+      "interval": "5m0s",
+      "tolerance": 50,
+      "interrupt_exist_connections": true
+    },
+    {
+      "type": "selector",
+      "tag": "订阅2国外",
+      "outbounds": null,
+      "providers": [
+        "订阅2"
+      ],
+      "exclude": "CN|电信|联通|移动|禁止|剩余|到期|以下|官网",
+      "interrupt_exist_connections": true
+    },
+    {
+      "type": "urltest",
+      "tag": "订阅2国外自动",
+      "outbounds": null,
+      "providers": [
+        "订阅2"
+      ],
+      "exclude": "CN|电信|联通|移动|tcp|禁止|剩余|到期|以下|官网",
+      "interval": "5m0s",
+      "tolerance": 50,
+      "interrupt_exist_connections": true
+    },
+    {
+      "type": "selector",
+      "tag": "订阅3",
+      "outbounds": null,
+      "providers": [
+        "订阅3"
+      ],
+      "exclude": "禁止|剩余|到期|以下|官网",
+      "interrupt_exist_connections": true
+    },
+    {
+      "type": "urltest",
+      "tag": "订阅3自动",
+      "outbounds": null,
+      "providers": [
+        "订阅3"
+      ],
+      "exclude": "禁止|剩余|到期|以下|官网",
+      "interval": "5m0s",
+      "tolerance": 50,
+      "interrupt_exist_connections": true
+    },
+    {
+      "type": "selector",
+      "tag": "香港",
+      "outbounds": null,
+      "providers": null,
+      "include": "港|HK|hk",
+      "use_all_providers": true,
+      "interrupt_exist_connections": true
+    },
+    {
+      "type": "urltest",
+      "tag": "香港自动",
+      "outbounds": null,
+      "providers": null,
+      "include": "港|HK|hk",
+      "use_all_providers": true,
+      "interval": "5m0s",
+      "tolerance": 50,
+      "interrupt_exist_connections": true
+    }
+  ],
+  "providers": [
+    {
+      "type": "remote",
+      "tag": "订阅1",
+      "url": "订阅链接",
+      "update_interval": "2h0m0s",
+      "download_detour": "direct",
+      "health_check": {
+        "enabled": true,
+        "url": "https://www.gstatic.com/generate_204"
+      }
+    },
+    {
+      "type": "remote",
+      "tag": "订阅2",
+      "url": "订阅链接",
+      "update_interval": "2h0m0s",
+      "download_detour": "direct",
+      "health_check": {
+        "enabled": true,
+        "url": "https://www.gstatic.com/generate_204"
+      }
+    },
+    {
+      "type": "remote",
+      "tag": "订阅3",
+      "url": "订阅链接",
+      "update_interval": "2h0m0s",
+      "download_detour": "direct",
+      "health_check": {
+        "enabled": true,
+        "url": "https://www.gstatic.com/generate_204"
+      }
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "ip_version": 6,
+        "action": "reject",
+        "no_drop": true
+      },
+      {
+        "action": "sniff"
+      },
+      {
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {
+            "protocol": "dns"
+          },
+          {
+            "port": 53
+          }
+        ],
+        "action": "hijack-dns"
+      },
+      {
+        "rule_set": [
+          "private_DNS",
+          "httpdns",
+          "pcdn"
+        ],
+        "action": "reject",
+        "no_drop": true
+      },
+      {
+        "rule_set": "Ad1",
+        "action": "reject",
+        "method": "drop"
+      },
+      {
+        "domain_keyword": [
+          "stun",
+          "quic",
+          "dtls",
+          "p2p",
+          "mcdn",
+          "tracker"
+        ],
+        "clash_mode": "严格模式",
+        "action": "reject",
+        "no_drop": true
+      },
+      {
+        "type": "logical",
+        "mode": "and",
+        "rules": [
+          {
+            "network": "udp"
+          },
+          {
+            "port": [
+              443,
+              3478,
+              5349
+            ]
+          },
+          {
+            "clash_mode": "严格模式"
+          }
+        ],
+        "action": "reject",
+        "no_drop": true
+      },
+      {
+        "protocol": [
+          "stun",
+          "quic",
+          "dtls"
+        ],
+        "clash_mode": "严格模式",
+        "action": "reject",
+        "no_drop": true
+      },
+      {
+        "domain_keyword": [
+          "bing.com",
+          "google"
+        ],
+        "outbound": "国外代理"
+      },
+      {
+        "domain_keyword": [
+          "weixin",
+          "qq.com",
+          "tencent",
+          "qpic",
+          "mmbiz",
+          "gtimg.com",
+          "flow.mxzu.net"
+        ],
+        "outbound": "国内代理"
+      },
+      {
+        "domain_suffix": ".cn",
+        "outbound": "国内代理"
+      },
+      {
+        "rule_set": [
+          "CN-site"
+        ],
+        "outbound": "国内代理"
+      },
+      {
+        "action": "resolve",
+//        "server": "alidns",
+        "disable_cache": true
+      },
+      {
+        "rule_set": [
+          "CN-ip"
+        ],
+        "outbound": "国内代理"
+      },
+      {
+        "rule_set": [
+          "tg_bad"
+        ],
+        "outbound": "国外代理",
+        "action": "route-options",
+        "override_address": "91.108.56.147"
+      }
+    ],
+    "rule_set": [
+      {
+        "type": "remote",
+        "tag": "Ad1",
+        "url": "https://gh-proxy.com/https://raw.githubusercontent.com/senshinya/singbox_ruleset/main/rule/Advertising/Advertising.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "httpdns",
+        "url": "https://gh-proxy.com/https://raw.githubusercontent.com/senshinya/singbox_ruleset/main/rule/BlockHttpDNS/BlockHttpDNS.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "CN-site",
+        "url": "https://gh-proxy.com/https://raw.githubusercontent.com/senshinya/singbox_ruleset/main/rule/ChinaMaxNoIP/ChinaMaxNoIP.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "CN-ip",
+        "url": "https://gh-proxy.com/https://raw.githubusercontent.com/senshinya/singbox_ruleset/main/rule/ChinaIPs/ChinaIPs.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "steam-cn",
+        "url": "https://gh-proxy.com/https://raw.githubusercontent.com/senshinya/singbox_ruleset/main/rule/SteamCN/SteamCN.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "private_DNS",
+        "url": "https://gh-proxy.com/https://raw.githubusercontent.com/LMQ00/sing-box_config/refs/heads/main/rules/private_DNS.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "pcdn",
+        "url": "https://gh-proxy.com/https://raw.githubusercontent.com/LMQ00/sing-box_config/refs/heads/main/rules/pcdn.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "tg_bad",
+        "url": "https://gh-proxy.com/https://raw.githubusercontent.com/LMQ00/sing-box_config/refs/heads/main/rules/tg_bad.srs"
+      }
+    ],
+    "final": "国外代理",
+    "auto_detect_interface": true,
+    "default_domain_resolver": {
+      "server": "alidns"
+    }
+  },
+  "experimental": {
+    "cache_file": {
+      "enabled": true,
+      "store_rdrc": false,
+      "store_fakeip": true
+    },
+    "clash_api": {
+      "external_controller": "0.0.0.0:9090",
+      "external_ui": "dashboard",
+      "external_ui_download_url": "https://gh-proxy.com/https://github.com/Zephyruso/zashboard/releases/latest/download/dist.zip"
+    }
+  }
+}
