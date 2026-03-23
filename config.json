@@ -39,9 +39,15 @@
     ],
     "rules": [
       {
-        "clash_mode": "拉取模式",
-        "domain_keyword": ".",
+        "clash_mode": [
+          "拉取模式",
+          "全局直连"
+        ],
         "server": "alidns"
+      },
+      {
+        "clash_mode": "全局代理",
+        "server": "google"
       },
       {
         "rule_set": "Ad1",
@@ -343,6 +349,14 @@
           }
         ],
         "action": "hijack-dns"
+      },
+      {
+        "clash_mode": "全局直连",
+        "outbound": "direct"
+      },
+      {
+        "clash_mode": "全局代理",
+        "outbound": "国外代理"
       },
       {
         "rule_set": [
