@@ -7,6 +7,11 @@
   "dns": {
     "servers": [
       {
+        "type": "dhcp",
+        "tag": "local",
+        "detour": "国内代理"
+      },
+      {
         "type": "https",
         "tag": "alidns",
         "detour": "国内代理",
@@ -43,11 +48,11 @@
           "拉取模式",
           "全局直连"
         ],
-        "server": "alidns"
+        "server": "local"
       },
       {
         "clash_mode": "全局代理",
-        "server": "google"
+        "server": "fakeip"
       },
       {
         "rule_set": "Ad1",
