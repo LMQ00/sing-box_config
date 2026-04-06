@@ -446,7 +446,8 @@
       },
       {
         "rule_set": [
-          "CN-site"
+          "CN-site",
+          "steam-cn"
         ],
         "outbound": "国内代理"
       },
