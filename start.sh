@@ -3,48 +3,41 @@
 cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")" || exit 1
 
 CONFIG_FILE="config.json"
-PLACEHOLDER="订阅链接" 
+PLACEHOLDER="订阅链接"
 
 BIN_DIR="./bin"
 TARGET_BINARY="./sing-box"
 
+# 自动部署 sing-box 核心
 if [[ -d "$BIN_DIR" ]]; then
     echo "📁 检测到 ./bin 目录，正在自动部署 sing-box 核心..."
 
     OS=""
     ARCH=""
-    
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        OS="linux"
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
-        OS="darwin"
-    else
-        echo "⚠️  警告：无法识别的操作系统 ($OSTYPE)，跳过自动部署。"
-        OS="unknown"
-    fi
+    case "$OSTYPE" in
+        linux-gnu*) OS="linux" ;;
+        darwin*)    OS="darwin" ;;
+        *)
+            echo "⚠️  警告：无法识别的操作系统 ($OSTYPE)，跳过自动部署。"
+            OS="unknown" ;;
+    esac
 
     MACHINE_TYPE=$(uname -m)
-    if [[ "$MACHINE_TYPE" == "x86_64" ]]; then
-        ARCH="amd64"
-    elif [[ "$MACHINE_TYPE" == "aarch64" ]] || [[ "$MACHINE_TYPE" == "arm64" ]] || [[ "$MACHINE_TYPE" == "armv8"* ]]; then
-        ARCH="arm64"
-    else
-        echo "⚠️  警告：无法识别的架构 ($MACHINE_TYPE)，跳过自动部署。"
-        ARCH="unknown"
-    fi
+    case "$MACHINE_TYPE" in
+        x86_64)               ARCH="amd64" ;;
+        aarch64|arm64|armv8*) ARCH="arm64" ;;
+        *)
+            echo "⚠️  警告：无法识别的架构 ($MACHINE_TYPE)，跳过自动部署。"
+            ARCH="unknown" ;;
+    esac
 
     if [[ "$OS" != "unknown" ]] && [[ "$ARCH" != "unknown" ]]; then
         SOURCE_PATH="$BIN_DIR/$OS-$ARCH/sing-box"
-        
         if [[ -f "$SOURCE_PATH" ]]; then
             echo "📦 正在从 $SOURCE_PATH 部署..."
-            cp "$SOURCE_PATH" "$TARGET_BINARY"
-            if [[ $? -eq 0 ]]; then
-                chmod +x "$TARGET_BINARY" 
-                echo "✅ sing-box ($OS-$ARCH) 部署成功！"
-            else
+            install -m 755 "$SOURCE_PATH" "$TARGET_BINARY" && \
+                echo "✅ sing-box ($OS-$ARCH) 部署成功！" || \
                 echo "❌ 错误：复制文件失败。"
-            fi
         else
             echo "❌ 错误：在 $BIN_DIR 中未找到 $OS-$ARCH/sing-box 文件。"
             echo "    请检查文件夹内是否有拼写错误。"
@@ -54,17 +47,12 @@ else
     echo "ℹ️  ./bin 目录不存在，使用现有根目录下的 sing-box 文件。"
 fi
 
-if [[ ! -f "$CONFIG_FILE" ]]; then
-    echo "❌ 错误：找不到配置文件 $CONFIG_FILE"
-    echo "请确保脚本与 $CONFIG_FILE 放在同一目录下。"
-    exit 1
-fi
+# 前置检查
+[[ -f "$CONFIG_FILE" ]] || { echo "❌ 错误：找不到配置文件 $CONFIG_FILE"; exit 1; }
+[[ -f "$TARGET_BINARY" ]] || { echo "❌ 错误：找不到 sing-box 核心文件"; exit 1; }
 
-if [[ ! -f "./sing-box" ]]; then
-    echo "❌ 错误：找不到 sing-box 核心文件"
-    echo "请确保脚本与 sing-box 文件在同一目录下，或在 ./bin 目录下放置对应架构的文件。"
-    exit 1
-fi
+# 确保 sing-box 可执行
+chmod +x "$TARGET_BINARY"
 
 echo "=================================="
 echo "   sing-box 管理脚本"
@@ -77,56 +65,57 @@ read -p "请选择操作 (1 或 2): " choice
 case $choice in
     1)
         echo "🚀 正在启动 Sing-box 核心..."
-        
+
         if grep -q "$PLACEHOLDER" "$CONFIG_FILE"; then
             echo "🚨 警告：配置文件中检测到未替换的 '$PLACEHOLDER'！"
             echo "   程序可能无法正常运行。"
             read -p "确定要继续启动吗？(y/N): " confirm
-            if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
-                exit 0
-            fi
+            [[ "$confirm" =~ ^[Yy]$ ]] || exit 0
         fi
 
         mkdir -p ./run
-        rm -rf ./run/*.log 2>/dev/null
-        
-        chmod +x ./sing-box
-        
-        sudo ./sing-box run -c "$CONFIG_FILE" -D ./ > ./run/sing-box.log 2>&1 &
+        rm -f ./run/*.log
+
+        sudo "$TARGET_BINARY" run -c "$CONFIG_FILE" -D ./ > ./run/sing-box.log 2>&1 &
         SING_BOX_PID=$!
-        echo "mPid: $SING_BOX_PID"
+
+        # 等待进程启动
+        sleep 2
+        if ! kill -0 "$SING_BOX_PID" 2>/dev/null; then
+            echo "❌ 错误：Sing-box 启动失败，请检查 ./run/sing-box.log 查看详情。"
+            wait "$SING_BOX_PID" 2>/dev/null
+            exit 1
+        fi
+
+        echo "PID: $SING_BOX_PID  |  日志: ./run/sing-box.log"
         echo "⏳ Sing-box 已启动，正在等待 ./dashboard 生成文件..."
 
-        MAX_WAIT=60  
-        COUNT=0
-        while true; do
-            if [[ -d "./dashboard" ]] && [[ -n "$(ls -A ./dashboard 2>/dev/null)" ]]; then
-                echo "✅ 检测到 ./dashboard 中有文件，正在执行节点切换..."
-                
-                curl -X PUT "http://127.0.0.1:9090/proxies/国外代理" \
-                     -H "Content-Type: application/json" \
-                     -d '{"name":"订阅1国外自动"}'
-                echo ""
-                break  
+        # 等待 dashboard 就绪，最多 60 秒
+        for ((i = 0; i < 60; i++)); do
+            if ! kill -0 "$SING_BOX_PID" 2>/dev/null; then
+                echo "❌ 错误：Sing-box 进程异常退出，请检查 ./run/sing-box.log 查看详情。"
+                exit 1
             fi
-            
-            ((COUNT++))
-            if [[ $COUNT -ge $MAX_WAIT ]]; then
-                echo "⚠️  等待超时（$MAX_WAIT 秒），未检测到 dashboard 文件，跳过切换。"
+            if [[ -d "./dashboard" ]] && [[ -n "$(find ./dashboard -mindepth 1 -maxdepth 1 2>/dev/null)" ]]; then
+                echo "✅ 检测到 ./dashboard 中有文件，正在执行节点切换..."
+                curl -X PUT "http://127.0.0.1:9090/proxies/国外代理" \
+                    -H "Content-Type: application/json" \
+                    -d '{"name":"订阅1国外自动"}'
+                echo ""
                 break
             fi
-            
             sleep 1
         done
 
         echo "ℹ️  脚本转入守护模式，按 Ctrl+C 退出。"
-        wait
+        wait "$SING_BOX_PID"
+        echo "⚠️  Sing-box 进程已退出。"
         ;;
 
     2)
-        echo "📝 更新订阅链接 "
+        echo "📝 更新订阅链接"
         echo "💡 提示：如果只输入一个链接，它将被复制到所有三个位置。"
-        
+
         read -p "请输入 订阅1 链接: " url1
         read -p "请输入 订阅2 链接 (可留空): " url2
         read -p "请输入 订阅3 链接 (可留空): " url3

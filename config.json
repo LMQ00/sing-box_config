@@ -48,7 +48,7 @@
           "拉取模式",
           "全局直连"
         ],
-        "server": "local"
+        "server": "alidns"
       },
       {
         "clash_mode": "全局代理",
