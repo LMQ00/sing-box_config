@@ -1,7 +1,7 @@
 自用 sing-box 配置
 
 本配置适用于带 provider 功能 的 sing-box 内核，例如：
-👉 [reF1nd](https://github.com/reF1nd/sing-box)
+👉 [reF1nd](https://github.com/reF1nd/sing-box) [tg](https://t.me/sing_box_reF1nd)
 
 ---
 
