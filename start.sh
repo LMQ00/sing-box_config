@@ -268,11 +268,11 @@ case $choice in
     3)
         echo "🔧 自动修复：清除缓存文件..."
 
-        if [[ -d "cache" ]]; then
-            rm -rf "cache"
-            echo "   ✅ 已删除 cache 目录"
+        if [[ -f "cache.db" ]]; then
+            rm -f "cache.db"
+            echo "   ✅ 已删除 cache.db"
         else
-            echo "   ℹ️  cache 目录不存在，跳过"
+            echo "   ℹ️  cache.db 不存在，跳过"
         fi
 
         if [[ -d "run" ]]; then

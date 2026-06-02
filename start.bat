@@ -140,11 +140,11 @@ REM ===================== 自动修复：清除缓存 =====================
 :fix
 echo 🔧 自动修复：清除缓存文件...
 
-if exist "cache" (
-    rmdir /s /q "cache" 2>nul
-    echo    ✅ 已删除 cache 目录
+if exist "cache.db" (
+    del /f /q "cache.db" 2>nul
+    echo    ✅ 已删除 cache.db
 ) else (
-    echo    ℹ️  cache 目录不存在，跳过
+    echo    ℹ️  cache.db 不存在，跳过
 )
 
 if exist "run" (
