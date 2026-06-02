@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 > nul
-setlocal
+setlocal enabledelayedexpansion
 
 REM --- 切换到脚本所在目录 ---
 cd /d "%~dp0"
@@ -74,6 +74,16 @@ set TAG=%TAG:"=%
 set TAG=%TAG:~0,-1%
 
 echo 📦 最新版本: %TAG%
+
+REM --- 验证版本号格式 ---
+echo %TAG% | findstr /r "^v[0-9]" >nul
+if %errorlevel% neq 0 (
+    echo ❌ 错误：无法获取版本号，可能是网络问题或 API 限流。
+    echo    请稍后重试或手动下载: https://github.com/LMQ00/sing-box/releases
+    rmdir /s /q "%TEMP_DIR%" 2>nul
+    pause
+    exit /b 1
+)
 
 REM --- 构建下载文件名 ---
 set "DOWNLOAD_FILE=sing-box-%TAG:~1%-%PLATFORM%.zip"
@@ -181,6 +191,13 @@ if /i not "%confirm%"=="y" exit /b 0
 :run_singbox
 if not exist "run" mkdir "run"
 
+REM 清理旧日志，只保留最近 5 个
+set COUNT=0
+for /f %%f in ('dir /b /o-n "run\*.log" 2^>nul') do (
+    set /a COUNT+=1
+    if !COUNT! GTR 5 del /f /q "run\%%f"
+)
+
 echo.
 echo ==================================
 echo   ✅ sing-box 已成功启动！
@@ -189,11 +206,20 @@ echo   📊 管理面板: http://127.0.0.1:9090/ui/
 echo   📡 API 地址: http://127.0.0.1:9090
 echo ==================================
 echo.
-echo ⏳ Sing-box 正在运行中...
-echo ℹ️  按 Ctrl+C 退出程序。
 
-.\sing-box.exe run -c "%CONFIG_FILE%" -D .\
-pause
+REM 后台启动 sing-box
+start "" /B .\sing-box.exe run -c "%CONFIG_FILE%" -D .\ > "run\sing-box.log" 2>&1
+echo ⏳ Sing-box 已在后台启动。
+echo 📋 日志文件: run\sing-box.log
+echo ℹ️  按任意键查看日志，按 Ctrl+C 退出。
+
+:watch_log
+REM 按任意键打开日志
+pause >nul
+if exist "run\sing-box.log" (
+    type "run\sing-box.log"
+)
+goto watch_log
 exit /b 0
 
 REM ===================== 更新订阅链接 =====================

@@ -20,6 +20,7 @@ readonly DASHBOARD_DIR="./dashboard"
 readonly MAX_LOGS=5
 readonly GITHUB_REPO="LMQ00/sing-box"
 readonly GITHUB_API="https://api.github.com/repos/$GITHUB_REPO/releases/latest"
+TEMP_DIRS=()
 
 # --- 信号处理：优雅退出 ---
 cleanup() {
@@ -29,6 +30,10 @@ cleanup() {
         sudo kill "$SING_BOX_PID" 2>/dev/null
         wait "$SING_BOX_PID" 2>/dev/null
     fi
+    # 清理临时目录
+    for d in "${TEMP_DIRS[@]}"; do
+        [[ -d "$d" ]] && rm -rf "$d"
+    done
     echo "✅ sing-box 已停止。"
 }
 trap cleanup SIGINT SIGTERM EXIT
@@ -155,6 +160,7 @@ download_latest_version() {
     # 下载文件
     local temp_dir
     temp_dir=$(mktemp -d)
+    TEMP_DIRS+=("$temp_dir")
 
     if ! curl -L -o "$temp_dir/$download_file" "$download_url"; then
         echo "❌ 错误：下载失败"
@@ -165,6 +171,13 @@ download_latest_version() {
     # 检查文件是否下载成功
     if [[ ! -f "$temp_dir/$download_file" ]]; then
         echo "❌ 错误：下载的文件不存在"
+        rm -rf "$temp_dir"
+        return 1
+    fi
+
+    # 验证是否为有效的 gzip 文件
+    if ! file "$temp_dir/$download_file" | grep -q "gzip"; then
+        echo "❌ 错误：下载的文件格式异常，不是有效的 gzip 文件"
         rm -rf "$temp_dir"
         return 1
     fi

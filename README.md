@@ -89,8 +89,11 @@ singbox/
 ├── sing-box            # 内核文件（自动下载）
 ├── rules/              # 规则文件
 │   ├── pcdn.json
+│   ├── pcdn.srs
 │   ├── private_DNS.json
-│   └── tg_bad.json
+│   ├── private_DNS.srs
+│   ├── tg_bad.json
+│   └── tg_bad.srs
 └── run/                # 运行时目录（日志等，自动生成）
 ```
 
