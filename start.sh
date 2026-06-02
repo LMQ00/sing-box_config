@@ -135,6 +135,33 @@ detect_platform() {
 }
 
 # ===================== 从 GitHub 下载最新版本 =====================
+# 加速链接列表（按优先级排序）
+MIRROR_URLS=(
+    "https://ghfast.top"
+    "https://ghgo.xyz"
+    "https://gh-proxy.com"
+    "https://mirror.ghproxy.com"
+)
+
+download_with_retry() {
+    local url="$1"
+    local output="$2"
+    local desc="$3"
+
+    echo "📥 正在下载: $desc"
+    if curl -L --connect-timeout 15 --max-time 120 -o "$output" "$url" 2>/dev/null; then
+        if [[ -f "$output" ]] && [[ $(stat -f%z "$output" 2>/dev/null || stat -c%s "$output" 2>/dev/null) -gt 1000 ]]; then
+            # 验证是否为有效的 gzip 文件
+            if file "$output" | grep -q "gzip"; then
+                return 0
+            fi
+            echo "⚠️  下载的文件格式异常，重试..."
+            rm -f "$output"
+        fi
+    fi
+    return 1
+}
+
 download_latest_version() {
     local platform="$1"
 
@@ -162,24 +189,26 @@ download_latest_version() {
     temp_dir=$(mktemp -d)
     TEMP_DIRS+=("$temp_dir")
 
-    if ! curl -L -o "$temp_dir/$download_file" "$download_url"; then
-        echo "❌ 错误：下载失败"
-        rm -rf "$temp_dir"
-        return 1
-    fi
-
-    # 检查文件是否下载成功
-    if [[ ! -f "$temp_dir/$download_file" ]]; then
-        echo "❌ 错误：下载的文件不存在"
-        rm -rf "$temp_dir"
-        return 1
-    fi
-
-    # 验证是否为有效的 gzip 文件
-    if ! file "$temp_dir/$download_file" | grep -q "gzip"; then
-        echo "❌ 错误：下载的文件格式异常，不是有效的 gzip 文件"
-        rm -rf "$temp_dir"
-        return 1
+    # 尝试直接下载
+    if download_with_retry "$download_url" "$temp_dir/$download_file" "$download_file"; then
+        echo "✅ 直接下载成功"
+    else
+        echo "⚠️  直接下载失败，尝试加速链接..."
+        local success=false
+        for mirror in "${MIRROR_URLS[@]}"; do
+            local mirror_url="${mirror}/https://github.com/$GITHUB_REPO/releases/download/$latest_tag/$download_file"
+            echo "🔄 尝试加速链接: $mirror"
+            if download_with_retry "$mirror_url" "$temp_dir/$download_file" "$download_file (via $mirror)"; then
+                success=true
+                echo "✅ 加速链接下载成功: $mirror"
+                break
+            fi
+        done
+        if [[ "$success" != true ]]; then
+            echo "❌ 错误：所有下载链接均失败"
+            rm -rf "$temp_dir"
+            return 1
+        fi
     fi
 
     echo "📦 正在解压..."
