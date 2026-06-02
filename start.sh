@@ -143,14 +143,16 @@ MIRROR_URLS=(
     "https://mirror.ghproxy.com"
 )
 
-download_with_retry() {
+download_and_validate() {
     local url="$1"
     local output="$2"
     local desc="$3"
 
     echo "📥 正在下载: $desc"
     if curl -L --connect-timeout 15 --max-time 120 -o "$output" "$url" 2>/dev/null; then
-        if [[ -f "$output" ]] && [[ $(stat -f%z "$output" 2>/dev/null || stat -c%s "$output" 2>/dev/null) -gt 1000 ]]; then
+        local fsize
+        fsize=$(stat -f%z "$output" 2>/dev/null || stat -c%s "$output" 2>/dev/null || echo 0)
+        if [[ -f "$output" ]] && [[ "$fsize" -gt 1000 ]]; then
             # 验证是否为有效的 gzip 文件
             if file "$output" | grep -q "gzip"; then
                 return 0
@@ -169,7 +171,7 @@ download_latest_version() {
 
     # 获取最新版本的 tag
     local latest_tag
-    latest_tag=$(curl -s "$GITHUB_API" | grep -o '"tag_name": "[^"]*"' | head -1 | cut -d'"' -f4)
+    latest_tag=$(curl -s --connect-timeout 15 --max-time 30 "$GITHUB_API" | grep -o '"tag_name": "[^"]*"' | head -1 | cut -d'"' -f4)
 
     if [[ -z "$latest_tag" ]]; then
         echo "❌ 错误：无法获取最新版本信息"
@@ -190,7 +192,7 @@ download_latest_version() {
     TEMP_DIRS+=("$temp_dir")
 
     # 尝试直接下载
-    if download_with_retry "$download_url" "$temp_dir/$download_file" "$download_file"; then
+    if download_and_validate "$download_url" "$temp_dir/$download_file" "$download_file"; then
         echo "✅ 直接下载成功"
     else
         echo "⚠️  直接下载失败，尝试加速链接..."
@@ -198,7 +200,7 @@ download_latest_version() {
         for mirror in "${MIRROR_URLS[@]}"; do
             local mirror_url="${mirror}/https://github.com/$GITHUB_REPO/releases/download/$latest_tag/$download_file"
             echo "🔄 尝试加速链接: $mirror"
-            if download_with_retry "$mirror_url" "$temp_dir/$download_file" "$download_file (via $mirror)"; then
+            if download_and_validate "$mirror_url" "$temp_dir/$download_file" "$download_file (via $mirror)"; then
                 success=true
                 echo "✅ 加速链接下载成功: $mirror"
                 break
@@ -251,12 +253,11 @@ if [[ -f "$TARGET_BINARY" ]]; then
 else
     echo "🔍 正在检测系统架构..."
 
-    PLATFORM=$(detect_platform)
-    if [[ $? -ne 0 ]]; then
+    PLATFORM=$(detect_platform) || {
         echo "❌ 无法检测系统架构，请手动下载 sing-box"
         echo "   下载地址: https://github.com/$GITHUB_REPO/releases"
         exit 1
-    fi
+    }
 
     echo "💻 检测到平台: $PLATFORM"
 
