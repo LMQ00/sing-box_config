@@ -114,7 +114,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -NoLogo -Command ^
     "  $i=$c.IndexOf($ph); if($i-lt 0){break};" ^
     "  $c=$c.Substring(0,$i)+$u+$c.Substring($i+$ph.Length)" ^
     "};" ^
-    "Set-Content $cfg -Value $c -NoNewline -Encoding UTF8;" ^
+    "[IO.File]::WriteAllText($cfg, $c, (New-Object System.Text.UTF8Encoding $false));" ^
     "Write-Host '';" ^
     "Write-Host '✅ 成功！配置文件已更新。';" ^
     "foreach($i in 0..2){" ^
