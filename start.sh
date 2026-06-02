@@ -12,7 +12,6 @@ cd "$SCRIPT_DIR" || { echo "❌ 错误：无法切换到脚本目录 $SCRIPT_DIR
 # --- 全局常量（readonly） ---
 readonly CONFIG_FILE="config.json"
 readonly PLACEHOLDER="订阅链接"
-readonly BIN_DIR="./bin"
 readonly TARGET_BINARY="./sing-box"
 readonly RUN_DIR="./run"
 readonly LOG_FILE="$RUN_DIR/sing-box.log"
