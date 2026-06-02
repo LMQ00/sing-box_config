@@ -1,19 +1,44 @@
-自用 sing-box 配置
+# sing-box 代理配置
 
-本配置适用于带 provider 功能 的 sing-box 内核，例如：
-👉 [reF1nd](https://github.com/reF1nd/sing-box) [tg](https://t.me/sing_box_reF1nd)
+自用 sing-box 配置，支持 provider 订阅、Clash API 面板、多平台一键管理。
+
+> 适用于带 provider 功能的 sing-box 内核，例如 [reF1nd/sing-box](https://github.com/reF1nd/sing-box) · [Telegram](https://t.me/sing_box_reF1nd)
 
 ---
 
-🚀 使用方法
+## 目录
 
-### 1. 准备内核
+- [快速开始](#快速开始)
+- [管理脚本](#管理脚本)
+- [目录结构](#目录结构)
+- [手动使用](#手动使用)
+- [面板访问](#面板访问)
+- [Android](#android-使用说明)
+- [故障排除](#故障排除)
 
-将 `bin/` 文件夹中对应系统的 sing-box 内核移动到项目根目录。
+---
 
-### 2. 配置订阅链接
+## 快速开始
 
-使用管理脚本自动配置（推荐）：
+### 1. 下载内核
+
+从 [reF1nd/sing-box](https://github.com/reF1nd/sing-box/releases) 下载对应平台的内核，解压到 `bin/` 目录：
+
+```
+bin/
+├── android-arm64/
+├── darwin-amd64/
+├── darwin-arm64/
+├── linux-amd64/
+├── linux-arm64/
+└── windows-amd64/
+```
+
+运行管理脚本会自动将对应平台的内核复制到根目录。
+
+### 2. 配置订阅
+
+运行管理脚本，选择 **选项 2**，输入你的订阅链接：
 
 ```bash
 # Linux / macOS
@@ -23,71 +48,98 @@
 start.bat
 ```
 
-选择 **选项 2** 输入订阅链接即可自动完成配置。
-
-也可手动编辑 `config.json`，搜索 `订阅链接`，替换为你的订阅链接（需全部替换，如没有三个订阅可重复添加）。
+支持最多 3 条订阅链接，留空的会自动复用第一条。
 
 ### 3. 启动服务
 
-使用管理脚本启动（推荐）：
+再次运行管理脚本，选择 **选项 1** 即可启动。
 
-```bash
-# Linux / macOS
-./start.sh
+---
 
-# Windows
-start.bat
+## 管理脚本
+
+提供 `start.sh`（Linux/macOS）和 `start.bat`（Windows）两个脚本，功能完全一致：
+
+| 选项 | 功能 | 说明 |
+|:---:|------|------|
+| **1** | 启动服务 | 启动 sing-box 代理，Ctrl+C 退出 |
+| **2** | 更新订阅 | 输入订阅链接，自动备份当前配置后更新 |
+| **3** | 自动修复 | 清除 `cache.db` 缓存文件和 `run/` 运行目录 |
+| **4** | 重置配置 | 从最近一次备份恢复 `config.json` |
+
+> 更新订阅时会自动备份当前配置为 `config.json.backup_YYYYMMDD_HHMMSS`，可通过选项 4 随时恢复。
+
+---
+
+## 目录结构
+
+```
+singbox/
+├── start.sh            # 管理脚本 (Linux/macOS)
+├── start.bat           # 管理脚本 (Windows)
+├── config.json         # 主配置文件
+├── cache.db            # 运行时缓存（自动生成）
+├── sing-box            # 内核文件（自动部署）
+├── bin/                # 各平台内核
+│   ├── linux-amd64/
+│   ├── darwin-arm64/
+│   └── windows-amd64/
+├── rules/              # 规则文件
+│   ├── pcdn.json
+│   ├── private_DNS.json
+│   └── tg_bad.json
+└── run/                # 运行时目录（日志等，自动生成）
 ```
 
-选择 **选项 1** 即可启动。
+---
 
-手动启动：
+## 手动使用
+
+如果不想使用管理脚本，也可以手动启动：
 
 ```bash
 # Linux / macOS
+chmod +x ./sing-box
 sudo ./sing-box run -D ./ -c ./config.json
 
-# Windows（管理员权限）
+# Windows (管理员 PowerShell)
 .\sing-box.exe run -D ./ -c ./config.json
 ```
 
 ---
 
-📋 管理脚本功能
+## 面板访问
 
-| 选项 | 功能 | 说明 |
-|------|------|------|
-| 1 | 启动 sing-box | 启动代理服务，Ctrl+C 退出 |
-| 2 | 更新订阅链接 | 输入新的订阅链接，自动备份并更新配置 |
-| 3 | 自动修复 | 清除 `cache.db` 和 `run/` 缓存文件 |
-| 4 | 重置配置 | 从最近的备份文件恢复 `config.json` |
+启动后可通过 Clash API 面板管理节点：
+
+- 本机：http://127.0.0.1:9090/ui/
+- 局域网：http://<设备IP>:9090/ui/
 
 ---
 
-🌐 访问面板
+## Android 使用说明
 
-启动完成后，在浏览器中打开：
-🔗 http://127.0.0.1:9090/ui/
+### 推荐模块
 
----
+[CHIZI-0618/box4magisk](https://github.com/CHIZI-0618/box4magisk)
 
-⌨️ 无 UI 设备（如 TTY 环境）
+### 配置要点
 
-可在同一局域网内的其他设备浏览器中访问：
-
-```
-http://<无UI设备的IP>:9090/ui/
-```
+- 代理模式选择 **core**（核心模式）
+- `tun_device` 填写 **tun0**（否则可能无法分享热点）
 
 ---
 
-🤖 Android 使用说明（Magisk 模块）
+## 故障排除
 
-推荐模块
+**启动报错 `invalid character 'ï'`**
 
-✅ [CHIZI-0618/box4magisk](https://github.com/CHIZI-0618/box4magisk)
+配置文件被写入了 UTF-8 BOM。用记事本打开 `config.json`，另存为时选择 **UTF-8（无 BOM）** 格式。
 
-配置要点：
+**按选项 1 直接退出**
 
-· 代理模式选择 "core"（某些模块称为"核心模式"）
-· tun_device 项填写 "tun0"（否则可能无法分享热点）
+通常是配置文件中仍包含 `订阅链接` 占位符。选择选项 2 输入真实订阅链接后再启动。
+
+**无法启动 / 连接失败**
+
+选择选项 3 清除缓存后重试。若仍不行，选择选项 4 重置配置。
