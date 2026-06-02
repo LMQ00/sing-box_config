@@ -26,5 +26,9 @@ Thumbs.db
 *.swo
 *~
 
+# pi agent 配置
+.pi/
+TODO_completed.md
+
 # 日志文件
 *.log
