@@ -20,9 +20,16 @@
 
 ## 快速开始
 
-### 1. 下载内核
+### 1. 克隆项目
 
-从 [reF1nd/sing-box](https://github.com/reF1nd/sing-box/releases) 下载对应平台的内核，解压到 `bin/` 目录：
+```bash
+git clone https://github.com/LMQ00/sing-box_config.git
+cd sing-box_config
+```
+
+### 2. 获取内核
+
+从 [reF1nd Telegram 频道](https://t.me/sing_box_reF1nd) 下载对应平台的内核，解压到 `bin/` 目录：
 
 ```
 bin/
@@ -34,9 +41,11 @@ bin/
 └── windows-amd64/
 ```
 
+> GitHub 仓库仅包含源码和配置，内核二进制文件请从 Telegram 频道获取。
+
 运行管理脚本会自动将对应平台的内核复制到根目录。
 
-### 2. 配置订阅
+### 3. 配置订阅
 
 运行管理脚本，选择 **选项 2**，输入你的订阅链接：
 
@@ -50,7 +59,7 @@ start.bat
 
 支持最多 3 条订阅链接，留空的会自动复用第一条。
 
-### 3. 启动服务
+### 4. 启动服务
 
 再次运行管理脚本，选择 **选项 1** 即可启动。
 
