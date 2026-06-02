@@ -1,0 +1,29 @@
+# sing-box 二进制文件
+sing-box
+sing-box.exe
+
+# 运行时文件
+cache.db
+run/
+dashboard/
+
+# 备份文件
+*.backup_*
+
+# 临时文件
+*.tmp
+*.temp
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# IDE 文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 日志文件
+*.log

@@ -16,6 +16,8 @@ if %errorLevel% NEQ 0 (
 set CONFIG_FILE=config.json
 set PLACEHOLDER=订阅链接
 set TARGET_BINARY=sing-box.exe
+set GITHUB_REPO=LMQ00/sing-box
+set GITHUB_API=https://api.github.com/repos/%GITHUB_REPO%/releases/latest
 
 cls
 echo ==================================
@@ -29,31 +31,109 @@ if not exist "%CONFIG_FILE%" (
     exit /b 1
 )
 
-REM --- 部署 sing-box 核心 ---
-echo 📁 正在部署 sing-box 核心...
-set "SOURCE_PATH=%~dp0bin\windows-amd64\sing-box.exe"
-if exist "%SOURCE_PATH%" (
-    echo 📦 检测到 bin 版本，正在复制...
-    copy /y "%SOURCE_PATH%" "%TARGET_BINARY%" > nul
-    if %errorlevel% equ 0 (
-        echo ✅ 已更新 sing-box 核心！
-    ) else (
-        echo ❌ 复制失败，但尝试使用现有文件...
-    )
+REM --- 检测系统架构 ---
+echo 🔍 正在检测系统架构...
+if "%PROCESSOR_ARCHITECTURE%"=="ARM64" (
+    set PLATFORM=windows-arm64
+) else if "%PROCESSOR_ARCHITECTURE%"=="x86" (
+    set PLATFORM=windows-386
 ) else (
-    echo ℹ️  未找到 bin\windows-amd64\sing-box.exe，跳过复制。
+    set PLATFORM=windows-amd64
+)
+echo 💻 检测到架构: %PLATFORM%
+
+REM --- 检查是否已存在 sing-box.exe ---
+if exist "%TARGET_BINARY%" (
+    echo ✅ 检测到现有 sing-box.exe 文件，跳过下载。
+    echo    如需更新，请删除 %TARGET_BINARY% 后重新运行脚本。
+    goto check_config
 )
 
-if not exist "%TARGET_BINARY%" (
-    echo ❌ 错误：根目录下也没有 sing-box.exe！
-    echo     请确保至少存在以下之一：
-    echo       - bin\windows-amd64\sing-box.exe
-    echo       - %TARGET_BINARY%
+echo 📥 正在从 GitHub 下载最新版本...
+
+REM --- 获取最新版本号 ---
+for /f "tokens=2 delims=:" %%i in ('curl -s "%GITHUB_API%" ^| findstr "tag_name"') do (
+    set "RAW_TAG=%%i"
+)
+set TAG=%RAW_TAG: =%
+set TAG=%TAG:"=%
+set TAG=%TAG:~0,-1%
+
+echo 📦 最新版本: %TAG%
+
+REM --- 构建下载文件名 ---
+set "DOWNLOAD_FILE=sing-box-%TAG:~1%-%PLATFORM%.zip"
+set "DOWNLOAD_URL=https://github.com/%GITHUB_REPO%/releases/download/%TAG%/%DOWNLOAD_FILE%"
+
+echo 📥 正在下载: %DOWNLOAD_FILE%
+
+REM --- 创建临时目录 ---
+set "TEMP_DIR=%TEMP%\sing-box-%RANDOM%"
+mkdir "%TEMP_DIR%" 2>nul
+
+REM --- 下载文件 ---
+curl -L -o "%TEMP_DIR%\%DOWNLOAD_FILE%" "%DOWNLOAD_URL%"
+if %errorlevel% neq 0 (
+    echo ❌ 错误：下载失败
+    rmdir /s /q "%TEMP_DIR%" 2>nul
     pause
     exit /b 1
-) else (
-    echo ✅ 检测到可用的 sing-box.exe，准备启动。
 )
+
+REM --- 检查文件是否下载成功 ---
+if not exist "%TEMP_DIR%\%DOWNLOAD_FILE%" (
+    echo ❌ 错误：下载的文件不存在
+    rmdir /s /q "%TEMP_DIR%" 2>nul
+    pause
+    exit /b 1
+)
+
+echo 📦 正在解压...
+
+REM --- 解压 zip 文件 ---
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Expand-Archive -Path '%TEMP_DIR%\%DOWNLOAD_FILE%' -DestinationPath '%TEMP_DIR%\extracted' -Force"
+if %errorlevel% neq 0 (
+    echo ❌ 错误：解压失败
+    rmdir /s /q "%TEMP_DIR%" 2>nul
+    pause
+    exit /b 1
+)
+
+REM --- 查找解压后的 sing-box.exe ---
+set "FOUND_BINARY="
+for /f "delims=" %%f in ('dir /s /b "%TEMP_DIR%\extracted\sing-box.exe" 2^>nul') do (
+    set "FOUND_BINARY=%%f"
+)
+
+if not defined FOUND_BINARY (
+    echo ❌ 错误：在压缩包中未找到 sing-box.exe
+    rmdir /s /q "%TEMP_DIR%" 2>nul
+    pause
+    exit /b 1
+)
+
+REM --- 复制到目标位置 ---
+copy /y "%FOUND_BINARY%" "%TARGET_BINARY%" > nul
+if %errorlevel% neq 0 (
+    echo ❌ 错误：安装失败
+    rmdir /s /q "%TEMP_DIR%" 2>nul
+    pause
+    exit /b 1
+)
+
+REM --- 清理临时文件 ---
+rmdir /s /q "%TEMP_DIR%" 2>nul
+
+echo ✅ sing-box (%PLATFORM%) 下载并安装成功！
+
+:check_config
+if not exist "%TARGET_BINARY%" (
+    echo ❌ 错误：找不到 sing-box.exe！
+    pause
+    exit /b 1
+)
+
+echo ✅ 准备启动。
 
 REM ===================== 主菜单 =====================
 echo ==================================

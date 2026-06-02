@@ -18,6 +18,8 @@ readonly RUN_DIR="./run"
 readonly LOG_FILE="$RUN_DIR/sing-box.log"
 readonly DASHBOARD_DIR="./dashboard"
 readonly MAX_LOGS=5
+readonly GITHUB_REPO="LMQ00/sing-box"
+readonly GITHUB_API="https://api.github.com/repos/$GITHUB_REPO/releases/latest"
 
 # --- 信号处理：优雅退出 ---
 cleanup() {
@@ -99,43 +101,130 @@ mask_url() {
     fi
 }
 
-# ===================== 自动部署 sing-box 核心 =====================
-if [[ -d "$BIN_DIR" ]]; then
-    echo "📁 检测到 ./bin 目录，正在自动部署 sing-box 核心..."
+# ===================== 检测系统架构 =====================
+detect_platform() {
+    local os="" arch=""
 
-    OS=""
-    ARCH=""
     case "$OSTYPE" in
-        linux-gnu*) OS="linux" ;;
-        darwin*)    OS="darwin" ;;
+        linux-android*) os="android" ;;
+        linux-gnu*)    os="linux" ;;
+        darwin*)       os="darwin" ;;
+        msys*|cygwin*|mingw*) os="windows" ;;
         *)
-            echo "⚠️  警告：无法识别的操作系统 ($OSTYPE)，跳过自动部署。"
-            OS="unknown" ;;
+            echo "⚠️  警告：无法识别的操作系统 ($OSTYPE)"
+            return 1 ;;
     esac
 
-    MACHINE_TYPE=$(uname -m)
-    case "$MACHINE_TYPE" in
-        x86_64)               ARCH="amd64" ;;
-        aarch64|arm64|armv8*) ARCH="arm64" ;;
+    local machine_type=$(uname -m)
+    case "$machine_type" in
+        x86_64)               arch="amd64" ;;
+        aarch64|arm64|armv8*) arch="arm64" ;;
+        armv7*|armhf*)        arch="armv7" ;;
+        i386|i686)            arch="386" ;;
         *)
-            echo "⚠️  警告：无法识别的架构 ($MACHINE_TYPE)，跳过自动部署。"
-            ARCH="unknown" ;;
+            echo "⚠️  警告：无法识别的架构 ($machine_type)"
+            return 1 ;;
     esac
 
-    if [[ "$OS" != "unknown" ]] && [[ "$ARCH" != "unknown" ]]; then
-        SOURCE_PATH="$BIN_DIR/$OS-$ARCH/sing-box"
-        if [[ -f "$SOURCE_PATH" ]]; then
-            echo "📦 正在从 $SOURCE_PATH 部署..."
-            install -m 755 "$SOURCE_PATH" "$TARGET_BINARY" && \
-                echo "✅ sing-box ($OS-$ARCH) 部署成功！" || \
-                echo "❌ 错误：复制文件失败。"
-        else
-            echo "❌ 错误：在 $BIN_DIR 中未找到 $OS-$ARCH/sing-box 文件。"
-            echo "    请检查文件夹内是否有拼写错误。"
-        fi
+    echo "$os-$arch"
+}
+
+# ===================== 从 GitHub 下载最新版本 =====================
+download_latest_version() {
+    local platform="$1"
+
+    echo "🔍 正在从 GitHub 获取最新版本信息..."
+
+    # 获取最新版本的 tag
+    local latest_tag
+    latest_tag=$(curl -s "$GITHUB_API" | grep -o '"tag_name": "[^"]*"' | head -1 | cut -d'"' -f4)
+
+    if [[ -z "$latest_tag" ]]; then
+        echo "❌ 错误：无法获取最新版本信息"
+        return 1
     fi
+
+    echo "📦 最新版本: $latest_tag"
+
+    # 构建下载文件名（Linux/macOS 用 tar.gz）
+    local download_file="sing-box-${latest_tag#v}-${platform}.tar.gz"
+    local download_url="https://github.com/$GITHUB_REPO/releases/download/$latest_tag/$download_file"
+
+    echo "📥 正在下载: $download_file"
+
+    # 下载文件
+    local temp_dir
+    temp_dir=$(mktemp -d)
+
+    if ! curl -L -o "$temp_dir/$download_file" "$download_url"; then
+        echo "❌ 错误：下载失败"
+        rm -rf "$temp_dir"
+        return 1
+    fi
+
+    # 检查文件是否下载成功
+    if [[ ! -f "$temp_dir/$download_file" ]]; then
+        echo "❌ 错误：下载的文件不存在"
+        rm -rf "$temp_dir"
+        return 1
+    fi
+
+    echo "📦 正在解压..."
+
+    # 解压文件
+    if ! tar -xzf "$temp_dir/$download_file" -C "$temp_dir"; then
+        echo "❌ 错误：解压失败"
+        rm -rf "$temp_dir"
+        return 1
+    fi
+
+    # 查找解压后的 sing-box 文件
+    local extracted_binary
+    extracted_binary=$(find "$temp_dir" -name "sing-box" -type f 2>/dev/null | head -1)
+
+    if [[ -z "$extracted_binary" ]]; then
+        echo "❌ 错误：在压缩包中未找到 sing-box 文件"
+        rm -rf "$temp_dir"
+        return 1
+    fi
+
+    # 复制到目标位置
+    if ! install -m 755 "$extracted_binary" "$TARGET_BINARY"; then
+        echo "❌ 错误：安装失败"
+        rm -rf "$temp_dir"
+        return 1
+    fi
+
+    # 清理临时文件
+    rm -rf "$temp_dir"
+
+    echo "✅ sing-box ($platform) 下载并安装成功！"
+    return 0
+}
+
+# ===================== 自动部署 sing-box 核心 =====================
+if [[ -f "$TARGET_BINARY" ]]; then
+    echo "✅ 检测到现有 sing-box 文件，跳过下载。"
+    echo "   如需更新，请删除 $TARGET_BINARY 后重新运行脚本。"
 else
-    echo "ℹ️  ./bin 目录不存在，使用现有根目录下的 sing-box 文件。"
+    echo "🔍 正在检测系统架构..."
+
+    PLATFORM=$(detect_platform)
+    if [[ $? -ne 0 ]]; then
+        echo "❌ 无法检测系统架构，请手动下载 sing-box"
+        echo "   下载地址: https://github.com/$GITHUB_REPO/releases"
+        exit 1
+    fi
+
+    echo "💻 检测到平台: $PLATFORM"
+
+    # 尝试从 GitHub 下载
+    if ! download_latest_version "$PLATFORM"; then
+        echo "❌ 从 GitHub 下载失败"
+        echo "   请手动下载 sing-box 并放置到当前目录"
+        echo "   下载地址: https://github.com/$GITHUB_REPO/releases"
+        exit 1
+    fi
 fi
 
 # ===================== 前置检查 =====================

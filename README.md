@@ -29,21 +29,17 @@ cd sing-box_config
 
 ### 2. 获取内核
 
-从 [reF1nd Telegram 频道](https://t.me/sing_box_reF1nd) 下载对应平台的内核，解压到 `bin/` 目录：
+运行管理脚本会自动检测您的系统架构，并从 GitHub 下载最新版本的 sing-box 内核。首次运行时会自动下载，无需手动操作。
 
-```
-bin/
-├── android-arm64/
-├── darwin-amd64/
-├── darwin-arm64/
-├── linux-amd64/
-├── linux-arm64/
-└── windows-amd64/
-```
+> 如需更新内核，只需删除根目录下的 `sing-box` (Linux/macOS) 或 `sing-box.exe` (Windows) 文件，然后重新运行脚本。
 
-> 本仓库 `bin/` 目录已包含各平台内核，但更新不一定及时。如需最新版本，请从 Telegram 频道下载。
+**内核信息：**
 
-运行管理脚本会自动将对应平台的内核复制到根目录。
+| 项目 | 地址 |
+|------|------|
+| 源码仓库 | https://github.com/reF1nd/sing-box |
+| 下载地址 | https://github.com/LMQ00/sing-box/releases |
+| 基于版本 | [reF1nd/sing-box](https://github.com/reF1nd/sing-box) · [Telegram](https://t.me/sing_box_reF1nd) |
 
 ### 3. 配置订阅
 
@@ -88,11 +84,7 @@ singbox/
 ├── start.bat           # 管理脚本 (Windows)
 ├── config.json         # 主配置文件
 ├── cache.db            # 运行时缓存（自动生成）
-├── sing-box            # 内核文件（自动部署）
-├── bin/                # 各平台内核
-│   ├── linux-amd64/
-│   ├── darwin-arm64/
-│   └── windows-amd64/
+├── sing-box            # 内核文件（自动下载）
 ├── rules/              # 规则文件
 │   ├── pcdn.json
 │   ├── private_DNS.json
