@@ -7,33 +7,60 @@
 
 🚀 使用方法
 
-1. 准备内核
+### 1. 准备内核
 
-将 bin/ 文件夹中对应系统的 sing-box 内核 移动到项目根目录。
+将 `bin/` 文件夹中对应系统的 sing-box 内核移动到项目根目录。
 
-2. 配置订阅链接
+### 2. 配置订阅链接
 
-打开 config.json 文件，搜索 "订阅链接"，将其替换为你的订阅链接(需全部替换，如没有三个订阅可以重复添加)。
+使用管理脚本自动配置（推荐）：
+
+```bash
+# Linux / macOS
+./start.sh
+
+# Windows
+start.bat
+```
+
+选择 **选项 2** 输入订阅链接即可自动完成配置。
+
+也可手动编辑 `config.json`，搜索 `订阅链接`，替换为你的订阅链接（需全部替换，如没有三个订阅可重复添加）。
+
+### 3. 启动服务
+
+使用管理脚本启动（推荐）：
+
+```bash
+# Linux / macOS
+./start.sh
+
+# Windows
+start.bat
+```
+
+选择 **选项 1** 即可启动。
+
+手动启动：
+
+```bash
+# Linux / macOS
+sudo ./sing-box run -D ./ -c ./config.json
+
+# Windows（管理员权限）
+.\sing-box.exe run -D ./ -c ./config.json
+```
 
 ---
 
-3. 启动服务
+📋 管理脚本功能
 
-Macos/Linux
-
-```bash
-chmod +x ./sing-box
-sudo ./sing-box run -D ./ -c ./config.json
-```
-
-Windows
-
-1. 右键 sing-box.exe → 属性 → 兼容性 → ✅ 以管理员身份运行
-2. 在项目根目录打开 CMD 或 PowerShell：
-
-```bash
-./sing-box.exe run -D ./ -c ./config.json
-```
+| 选项 | 功能 | 说明 |
+|------|------|------|
+| 1 | 启动 sing-box | 启动代理服务，Ctrl+C 退出 |
+| 2 | 更新订阅链接 | 输入新的订阅链接，自动备份并更新配置 |
+| 3 | 自动修复 | 清除 `cache.db` 和 `run/` 缓存文件 |
+| 4 | 重置配置 | 从最近的备份文件恢复 `config.json` |
 
 ---
 
@@ -52,8 +79,6 @@ Windows
 http://<无UI设备的IP>:9090/ui/
 ```
 
-也可使用start.sh辅助运行，start.sh脚本启动后可自动连接到国外代理
-
 ---
 
 🤖 Android 使用说明（Magisk 模块）
@@ -64,7 +89,5 @@ http://<无UI设备的IP>:9090/ui/
 
 配置要点：
 
-· 代理模式选择 "core"（某些模块称为“核心模式”）
+· 代理模式选择 "core"（某些模块称为"核心模式"）
 · tun_device 项填写 "tun0"（否则可能无法分享热点）
-
----
