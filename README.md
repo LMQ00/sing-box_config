@@ -63,7 +63,7 @@ start.bat
 
 ## 管理脚本
 
-提供 `start.sh`（Linux/macOS）和 `start.bat`（Windows）两个脚本，功能完全一致：
+提供 `start.sh`（Linux/macOS）和 `start.bat`（Windows）两个脚本，核心功能一致：
 
 | 选项 | 功能 | 说明 |
 |:---:|------|------|
@@ -71,6 +71,8 @@ start.bat
 | **2** | 更新订阅 | 输入订阅链接，自动备份当前配置后更新 |
 | **3** | 自动修复 | 清除 `cache.db` 缓存文件和 `run/` 运行目录 |
 | **4** | 重置配置 | 从最近一次备份恢复 `config.json` |
+
+> `start.sh` 额外支持：后台守护运行、日志轮转、Dashboard 就绪检测及自动节点切换。
 
 > 更新订阅时会自动备份当前配置为 `config.json.backup_YYYYMMDD_HHMMSS`，可通过选项 4 随时恢复。
 

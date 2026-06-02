@@ -276,6 +276,7 @@ case $choice in
         echo "⏳ Sing-box 已启动，正在等待 $DASHBOARD_DIR 生成文件..."
 
         # 等待 dashboard 就绪，最多 60 秒，每 5 秒打印进度
+        i=0
         for ((i = 0; i < 60; i++)); do
             if ! kill -0 "$SING_BOX_PID" 2>/dev/null; then
                 echo "❌ 错误：Sing-box 进程异常退出，请检查 $LOG_FILE 查看详情。"

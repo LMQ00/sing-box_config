@@ -5,11 +5,11 @@ setlocal
 REM --- 切换到脚本所在目录 ---
 cd /d "%~dp0"
 
-REM --- 请求管理员权限 ---
+REM --- 管理员提权（处理路径空格） ---
 net session >nul 2>&1
 if %errorLevel% NEQ 0 (
     echo 正在请求管理员权限...
-    powershell -Command "Start-Process cmd -ArgumentList '/c %~dpnx0' -Verb RunAs"
+    powershell -Command "Start-Process cmd -ArgumentList '/c """%~dpfx0"""' -Verb RunAs"
     exit /b
 )
 
@@ -31,11 +31,25 @@ if not exist "%CONFIG_FILE%" (
     exit /b 1
 )
 
+REM --- 检查 curl 是否可用 ---
+where curl >nul 2>&1
+if %errorlevel% neq 0 (
+    echo ❌ 错误：未找到 curl 命令，请先安装 curl 或升级到 Windows 10 1803+。
+    pause
+    exit /b 1
+)
+
 REM --- 检测系统架构 ---
 echo 🔍 正在检测系统架构...
-if "%PROCESSOR_ARCHITECTURE%"=="ARM64" (
+REM 处理 ARM64 WoW64 场景：cmd.exe 以 x86 兼容模式运行时
+if defined PROCESSOR_ARCHITEW6432 (
+    set "REAL_ARCH=%PROCESSOR_ARCHITEW6432%"
+) else (
+    set "REAL_ARCH=%PROCESSOR_ARCHITECTURE%"
+)
+if /i "%REAL_ARCH%"=="ARM64" (
     set PLATFORM=windows-arm64
-) else if "%PROCESSOR_ARCHITECTURE%"=="x86" (
+) else if /i "%REAL_ARCH%"=="x86" (
     set PLATFORM=windows-386
 ) else (
     set PLATFORM=windows-amd64
@@ -99,10 +113,10 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-REM --- 查找解压后的 sing-box.exe ---
+REM --- 查找解压后的 sing-box.exe（取第一个匹配） ---
 set "FOUND_BINARY="
 for /f "delims=" %%f in ('dir /s /b "%TEMP_DIR%\extracted\sing-box.exe" 2^>nul') do (
-    set "FOUND_BINARY=%%f"
+    if not defined FOUND_BINARY set "FOUND_BINARY=%%f"
 )
 
 if not defined FOUND_BINARY (
@@ -167,7 +181,15 @@ if /i not "%confirm%"=="y" exit /b 0
 :run_singbox
 if not exist "run" mkdir "run"
 
-echo ⏳ Sing-box 已启动。
+echo.
+echo ==================================
+echo   ✅ sing-box 已成功启动！
+echo ==================================
+echo   📊 管理面板: http://127.0.0.1:9090/ui/
+echo   📡 API 地址: http://127.0.0.1:9090
+echo ==================================
+echo.
+echo ⏳ Sing-box 正在运行中...
 echo ℹ️  按 Ctrl+C 退出程序。
 
 .\sing-box.exe run -c "%CONFIG_FILE%" -D .\
