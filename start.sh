@@ -151,8 +151,10 @@ echo "   sing-box 管理脚本"
 echo "=================================="
 echo "1. 启动 sing-box 核心"
 echo "2. 更新订阅链接"
+echo "3. 自动修复（清除缓存）"
+echo "4. 重置配置（从备份恢复）"
 echo "=================================="
-read -p "请选择操作 (1 或 2): " choice
+read -p "请选择操作 (1-4): " choice
 
 case $choice in
     1)
@@ -263,8 +265,48 @@ case $choice in
         echo "   订阅3: $(mask_url "$final_url3")"
         ;;
 
+    3)
+        echo "🔧 自动修复：清除缓存文件..."
+
+        if [[ -d "cache" ]]; then
+            rm -rf "cache"
+            echo "   ✅ 已删除 cache 目录"
+        else
+            echo "   ℹ️  cache 目录不存在，跳过"
+        fi
+
+        if [[ -d "run" ]]; then
+            rm -rf "run"
+            echo "   ✅ 已删除 run 目录"
+        else
+            echo "   ℹ️  run 目录不存在，跳过"
+        fi
+
+        echo "✅ 缓存清理完成！"
+        ;;
+
+    4)
+        echo "🔄 重置配置：从备份恢复..."
+
+        # 查找最新的备份文件
+        latest_backup=$(ls -t ${CONFIG_FILE}.backup_* 2>/dev/null | head -n 1)
+
+        if [[ -z "$latest_backup" ]]; then
+            echo "❌ 错误：未找到任何备份文件！"
+            echo "   备份文件格式：config.json.backup_YYYYMMDD_HHMMSS"
+            exit 1
+        fi
+
+        echo "   找到最新备份: $latest_backup"
+        read -p "确定要恢复此备份吗？(y/N): " confirm
+        [[ "$confirm" =~ ^[Yy]$ ]] || exit 0
+
+        cp "$latest_backup" "$CONFIG_FILE"
+        echo "✅ 配置已恢复自 $latest_backup"
+        ;;
+
     *)
-        echo "❌ 无效选择，请输入 1 或 2。"
+        echo "❌ 无效选择，请输入 1-4。"
         exit 1
         ;;
 esac

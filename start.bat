@@ -59,12 +59,16 @@ REM ===================== 主菜单 =====================
 echo ==================================
 echo 1. 启动 sing-box 核心
 echo 2. 更新订阅链接
+echo 3. 自动修复（清除缓存）
+echo 4. 重置配置（从备份恢复）
 echo ==================================
-set /p choice=请选择操作 (1 或 2):
+set /p choice=请选择操作 (1-4):
 
 if "%choice%"=="1" goto start
 if "%choice%"=="2" goto update
-echo ❌ 无效选择，请输入 1 或 2。
+if "%choice%"=="3" goto fix
+if "%choice%"=="4" goto reset
+echo ❌ 无效选择，请输入 1-4。
 pause
 exit /b 1
 
@@ -127,6 +131,59 @@ if %errorlevel% neq 0 (
     echo ❌ 更新失败！请检查 PowerShell 是否可用。
     pause
     exit /b 1
+)
+
+pause
+exit /b 0
+
+REM ===================== 自动修复：清除缓存 =====================
+:fix
+echo 🔧 自动修复：清除缓存文件...
+
+if exist "cache" (
+    rmdir /s /q "cache" 2>nul
+    echo    ✅ 已删除 cache 目录
+) else (
+    echo    ℹ️  cache 目录不存在，跳过
+)
+
+if exist "run" (
+    rmdir /s /q "run" 2>nul
+    echo    ✅ 已删除 run 目录
+) else (
+    echo    ℹ️  run 目录不存在，跳过
+)
+
+echo ✅ 缓存清理完成！
+pause
+exit /b 0
+
+REM ===================== 重置配置：从备份恢复 =====================
+:reset
+echo 🔄 重置配置：从备份恢复...
+
+REM 查找最新的备份文件
+set "LATEST_BACKUP="
+for /f "delims=" %%f in ('dir /b /o-n "%CONFIG_FILE%.backup_*" 2^>nul') do (
+    if not defined LATEST_BACKUP set "LATEST_BACKUP=%%f"
+)
+
+if not defined LATEST_BACKUP (
+    echo ❌ 错误：未找到任何备份文件！
+    echo    备份文件格式：config.json.backup_YYYYMMDD_HHMMSS
+    pause
+    exit /b 1
+)
+
+call echo    找到最新备份: %%LATEST_BACKUP%%
+set /p confirm=确定要恢复此备份吗？(y/N):
+if /i not "%confirm%"=="y" exit /b 0
+
+call copy /y "%%LATEST_BACKUP%%" "%CONFIG_FILE%" >nul 2>nul
+if %errorlevel% equ 0 (
+    call echo ✅ 配置已恢复自 %%LATEST_BACKUP%%
+) else (
+    echo ❌ 恢复失败！
 )
 
 pause
