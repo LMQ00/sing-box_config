@@ -80,7 +80,6 @@ echo %TAG% | findstr /r "^v[0-9]" >nul
 if %errorlevel% neq 0 (
     echo ❌ 错误：无法获取版本号，可能是网络问题或 API 限流。
     echo    请稍后重试或手动下载: https://github.com/LMQ00/sing-box/releases
-    rmdir /s /q "%TEMP_DIR%" 2>nul
     pause
     exit /b 1
 )
@@ -89,24 +88,42 @@ REM --- 构建下载文件名 ---
 set "DOWNLOAD_FILE=sing-box-%TAG:~1%-%PLATFORM%.zip"
 set "DOWNLOAD_URL=https://github.com/%GITHUB_REPO%/releases/download/%TAG%/%DOWNLOAD_FILE%"
 
-echo 📥 正在下载: %DOWNLOAD_FILE%
-
 REM --- 创建临时目录 ---
 set "TEMP_DIR=%TEMP%\sing-box-%RANDOM%"
 mkdir "%TEMP_DIR%" 2>nul
 
-REM --- 下载文件 ---
-curl -L -o "%TEMP_DIR%\%DOWNLOAD_FILE%" "%DOWNLOAD_URL%"
-if %errorlevel% neq 0 (
-    echo ❌ 错误：下载失败
-    rmdir /s /q "%TEMP_DIR%" 2>nul
-    pause
-    exit /b 1
+REM --- 加速链接列表（按优先级排序） ---
+set "MIRRORS=https://ghfast.top https://ghgo.xyz https://gh-proxy.com https://mirror.ghproxy.com"
+
+REM --- 尝试直接下载 ---
+echo 📥 正在下载: %DOWNLOAD_FILE%
+set "DL_OK=0"
+curl -L --connect-timeout 15 --max-time 120 -o "%TEMP_DIR%\%DOWNLOAD_FILE%" "%DOWNLOAD_URL%" 2>nul
+if %errorlevel% equ 0 if exist "%TEMP_DIR%\%DOWNLOAD_FILE%" (
+    for %%a in ("%TEMP_DIR%\%DOWNLOAD_FILE%") do (
+        if %%~za GTR 1000 set "DL_OK=1"
+    )
 )
 
-REM --- 检查文件是否下载成功 ---
-if not exist "%TEMP_DIR%\%DOWNLOAD_FILE%" (
-    echo ❌ 错误：下载的文件不存在
+REM --- 直接下载失败时，依次尝试加速链接 ---
+if "%DL_OK%"=="0" (
+    echo ⚠️  直接下载失败，尝试加速链接...
+    for %%m in (%MIRRORS%) do (
+        if "%DL_OK%"=="0" (
+            echo 🔄 尝试加速链接: %%m
+            curl -L --connect-timeout 15 --max-time 120 -o "%TEMP_DIR%\%DOWNLOAD_FILE%" "%%m/https://github.com/%GITHUB_REPO%/releases/download/%TAG%/%DOWNLOAD_FILE%" 2>nul
+            if !errorlevel! equ 0 if exist "%TEMP_DIR%\%DOWNLOAD_FILE%" (
+                for %%a in ("%TEMP_DIR%\%DOWNLOAD_FILE%") do (
+                    if %%~za GTR 1000 set "DL_OK=1"
+                )
+            )
+            if "%DL_OK%"=="1" echo ✅ 加速链接下载成功: %%m
+        )
+    )
+)
+
+if "%DL_OK%"=="0" (
+    echo ❌ 错误：所有下载链接均失败
     rmdir /s /q "%TEMP_DIR%" 2>nul
     pause
     exit /b 1
@@ -190,6 +207,12 @@ if /i not "%confirm%"=="y" exit /b 0
 
 :run_singbox
 if not exist "run" mkdir "run"
+
+REM 轮转日志：将当前日志重命名为带时间戳的文件
+if exist "run\sing-box.log" (
+    for /f "delims=" %%d in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"') do set "LOG_TS=%%d"
+    move /y "run\sing-box.log" "run\sing-box-!LOG_TS!.log" >nul 2>nul
+)
 
 REM 清理旧日志，只保留最近 5 个
 set COUNT=0
