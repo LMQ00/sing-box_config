@@ -105,6 +105,128 @@ mask_url() {
     fi
 }
 
+# ===================== 下载 Dashboard（从 config.json external_ui_download_url） =====================
+download_dashboard() {
+    # 如果 dashboard 目录已存在且有文件，跳过
+    if [[ -d "$DASHBOARD_DIR" ]] && [[ -n "$(find "$DASHBOARD_DIR" -mindepth 1 -maxdepth 1 2>/dev/null)" ]]; then
+        echo "✅ Dashboard 已存在，跳过下载。"
+        return 0
+    fi
+
+    # 从 config.json 读取 external_ui_download_url
+    local ui_url
+    ui_url=$(grep -o '"external_ui_download_url"[[:space:]]*:[[:space:]]*"[^"]*"' "$CONFIG_FILE" | head -1 | sed 's/.*:[[:space:]]*"\(.*\)"/\1/')
+
+    if [[ -z "$ui_url" ]]; then
+        echo "ℹ️  config.json 中未配置 external_ui_download_url，跳过 Dashboard 下载。"
+        return 0
+    fi
+
+    echo "📥 正在下载 Dashboard..."
+
+    local temp_dir
+    temp_dir=$(mktemp -d)
+    TEMP_DIRS+=("$temp_dir")
+
+    local temp_zip="$temp_dir/dashboard.zip"
+
+    # --- 带负载均衡的下载：直连 → 各加速链接 ---
+    local success=false
+
+    # 1) 尝试配置的 URL 直连
+    echo "📥 尝试直连: $(mask_url "$ui_url")"
+    if curl -L --connect-timeout 15 --max-time 120 -o "$temp_zip" "$ui_url" 2>/dev/null; then
+        local fsize
+        fsize=$(stat -f%z "$temp_zip" 2>/dev/null || stat -c%s "$temp_zip" 2>/dev/null || echo 0)
+        if [[ -f "$temp_zip" ]] && [[ "$fsize" -gt 1000 ]]; then
+            success=true
+            echo "✅ 直连下载成功"
+        fi
+    fi
+
+    # 2) 从配置 URL 提取 GitHub 原始地址（去掉已知镜像前缀）
+    local github_url="$ui_url"
+    if [[ "$success" != true ]] && echo "$ui_url" | grep -q "github.com"; then
+        for mirror in "${MIRROR_URLS[@]}"; do
+            local escaped_mirror
+            escaped_mirror=$(printf '%s' "$mirror" | sed 's|[\/.]|\\&|g')
+            local stripped
+            stripped=$(echo "$ui_url" | sed "s|^${escaped_mirror}/||")
+            if [[ "$stripped" != "$ui_url" ]]; then
+                github_url="$stripped"
+                break
+            fi
+        done
+
+        # 3) 依次尝试各加速链接
+        echo "⚠️  直连失败，尝试加速链接..."
+        for mirror in "${MIRROR_URLS[@]}"; do
+            [[ "$success" = true ]] && break
+            local mirror_url="${mirror}/${github_url}"
+            echo "🔄 尝试加速链接: $mirror"
+            if curl -L --connect-timeout 15 --max-time 120 -o "$temp_zip" "$mirror_url" 2>/dev/null; then
+                local fsize
+                fsize=$(stat -f%z "$temp_zip" 2>/dev/null || stat -c%s "$temp_zip" 2>/dev/null || echo 0)
+                if [[ -f "$temp_zip" ]] && [[ "$fsize" -gt 1000 ]]; then
+                    success=true
+                    echo "✅ 加速链接下载成功: $mirror"
+                fi
+            fi
+        done
+    fi
+
+    if [[ "$success" != true ]]; then
+        echo "⚠️  Dashboard 所有下载链接均失败，跳过。"
+        rm -rf "$temp_dir"
+        return 0
+    fi
+
+    echo "📦 正在解压 Dashboard..."
+
+    # 创建 dashboard 目录
+    mkdir -p "$DASHBOARD_DIR"
+
+    # 解压到临时子目录，处理嵌套结构
+    local extract_dir="$temp_dir/extracted"
+    mkdir -p "$extract_dir"
+
+    if command -v unzip &>/dev/null; then
+        unzip -o "$temp_zip" -d "$extract_dir" > /dev/null 2>&1
+    else
+        # fallback: 用 tar 尝试解压（部分 zip 兼容）
+        tar -xzf "$temp_zip" -C "$extract_dir" 2>/dev/null || {
+            echo "⚠️  Dashboard 解压失败（缺少 unzip），跳过。"
+            rm -rf "$temp_dir"
+            return 0
+        }
+    fi
+
+    # 如果解压后只有一个子目录，将其内容上移
+    local subdirs
+    subdirs=$(find "$extract_dir" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
+    local files
+    files=$(find "$extract_dir" -mindepth 1 -maxdepth 1 -type f 2>/dev/null)
+
+    if [[ -z "$files" ]] && [[ -n "$subdirs" ]]; then
+        # 只有子目录，没有直接文件 → 取第一个子目录的内容
+        local single_dir
+        single_dir=$(echo "$subdirs" | head -1)
+        local sub_count
+        sub_count=$(echo "$subdirs" | wc -l)
+        if [[ "$sub_count" -eq 1 ]]; then
+            cp -r "$single_dir"/* "$DASHBOARD_DIR" 2>/dev/null
+            cp -r "$single_dir"/.* "$DASHBOARD_DIR" 2>/dev/null || true
+        else
+            cp -r "$extract_dir"/* "$DASHBOARD_DIR" 2>/dev/null
+        fi
+    else
+        cp -r "$extract_dir"/* "$DASHBOARD_DIR" 2>/dev/null
+    fi
+
+    rm -rf "$temp_dir"
+    echo "✅ Dashboard 部署完成！路径: $DASHBOARD_DIR"
+}
+
 # ===================== 检测系统架构 =====================
 detect_platform() {
     local os="" arch=""
@@ -136,6 +258,7 @@ detect_platform() {
 # ===================== 从 GitHub 下载最新版本 =====================
 # 加速链接列表（按优先级排序）
 MIRROR_URLS=(
+    "https://gh.xmly.dev"
     "https://ghfast.top"
     "https://ghgo.xyz"
     "https://gh-proxy.com"
@@ -269,6 +392,9 @@ else
     fi
 fi
 
+# ===================== 下载 Dashboard（与二进制文件同时部署） =====================
+download_dashboard
+
 # ===================== 前置检查 =====================
 [[ -f "$CONFIG_FILE" ]] || { echo "❌ 错误：找不到配置文件 $CONFIG_FILE"; exit 1; }
 [[ -f "$TARGET_BINARY" ]] || { echo "❌ 错误：找不到 sing-box 核心文件"; exit 1; }
@@ -276,169 +402,188 @@ fi
 # 确保 sing-box 可执行
 chmod +x "$TARGET_BINARY"
 
-# ===================== 主菜单 =====================
-echo "=================================="
-echo "   sing-box 管理脚本"
-echo "=================================="
-echo "1. 启动 sing-box 核心"
-echo "2. 更新订阅链接"
-echo "3. 自动修复（清除缓存）"
-echo "4. 重置配置（从备份恢复）"
-echo "=================================="
-read -p "请选择操作 (1-4): " choice
+# ===================== 主菜单（循环） =====================
+while true; do
+    echo ""
+    echo "=================================="
+    echo "   sing-box 管理脚本"
+    echo "=================================="
+    echo "1. 启动 sing-box 核心"
+    echo "2. 更新订阅链接"
+    echo "3. 自动修复（清除缓存）"
+    echo "4. 重置配置（从备份恢复）"
+    echo "5. 退出"
+    echo "=================================="
+    read -p "请选择操作 (1-5): " choice
 
-case $choice in
-    1)
-        echo "🚀 正在启动 Sing-box 核心..."
+    case $choice in
+        1)
+            echo "🚀 正在启动 Sing-box 核心..."
 
-        if grep -q "$PLACEHOLDER" "$CONFIG_FILE"; then
-            echo "🚨 警告：配置文件中检测到未替换的 '$PLACEHOLDER'！"
-            echo "   程序可能无法正常运行。"
-            read -p "确定要继续启动吗？(y/N): " confirm
-            [[ "$confirm" =~ ^[Yy]$ ]] || exit 0
-        fi
+            if grep -q "$PLACEHOLDER" "$CONFIG_FILE"; then
+                echo "🚨 警告：配置文件中检测到未替换的 '$PLACEHOLDER'！"
+                echo "   程序可能无法正常运行。"
+                read -p "确定要继续启动吗？(y/N): " confirm
+                [[ "$confirm" =~ ^[Yy]$ ]] || continue
+            fi
 
-        # 清理旧日志，只保留最近 MAX_LOGS 个
-        cleanup_old_logs "$RUN_DIR" "$MAX_LOGS"
+            # 清理旧日志，只保留最近 MAX_LOGS 个
+            cleanup_old_logs "$RUN_DIR" "$MAX_LOGS"
 
-        ensure_sudo
+            ensure_sudo
 
-        sudo "$TARGET_BINARY" run -c "$CONFIG_FILE" -D ./ > "$LOG_FILE" 2>&1 &
-        SING_BOX_PID=$!
+            sudo "$TARGET_BINARY" run -c "$CONFIG_FILE" -D ./ > "$LOG_FILE" 2>&1 &
+            SING_BOX_PID=$!
 
-        # 等待进程启动
-        sleep 2
-        if ! kill -0 "$SING_BOX_PID" 2>/dev/null; then
-            echo "❌ 错误：Sing-box 启动失败，请检查 $LOG_FILE 查看详情。"
-            wait "$SING_BOX_PID" 2>/dev/null
-            exit 1
-        fi
-
-        echo "PID: $SING_BOX_PID  |  日志: $LOG_FILE"
-        echo "⏳ Sing-box 已启动，正在等待 $DASHBOARD_DIR 生成文件..."
-
-        # 等待 dashboard 就绪，最多 60 秒，每 5 秒打印进度
-        i=0
-        for ((i = 0; i < 60; i++)); do
+            # 等待进程启动
+            sleep 2
             if ! kill -0 "$SING_BOX_PID" 2>/dev/null; then
-                echo "❌ 错误：Sing-box 进程异常退出，请检查 $LOG_FILE 查看详情。"
-                exit 1
+                echo "❌ 错误：Sing-box 启动失败，请检查 $LOG_FILE 查看详情。"
+                wait "$SING_BOX_PID" 2>/dev/null
+                read -p "按 Enter 返回菜单..."
+                continue
             fi
-            if [[ -d "$DASHBOARD_DIR" ]] && [[ -n "$(find "$DASHBOARD_DIR" -mindepth 1 -maxdepth 1 2>/dev/null)" ]]; then
-                echo "✅ 检测到 $DASHBOARD_DIR 中有文件，正在执行节点切换..."
-                check_curl
-                curl_code=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "http://127.0.0.1:9090/proxies/国外代理" \
-                    -H "Content-Type: application/json" \
-                    -d '{"name":"订阅1国外自动"}')
-                if [[ "$curl_code" -ge 200 ]] && [[ "$curl_code" -lt 300 ]]; then
-                    echo "✅ 节点切换成功。"
-                else
-                    echo "⚠️  节点切换请求返回 HTTP $curl_code，可能需要手动检查。"
+
+            echo "PID: $SING_BOX_PID  |  日志: $LOG_FILE"
+            echo "⏳ Sing-box 已启动，正在等待 $DASHBOARD_DIR 生成文件..."
+
+            # 等待 dashboard 就绪，最多 60 秒，每 5 秒打印进度
+            i=0
+            for ((i = 0; i < 60; i++)); do
+                if ! kill -0 "$SING_BOX_PID" 2>/dev/null; then
+                    echo "❌ 错误：Sing-box 进程异常退出，请检查 $LOG_FILE 查看详情。"
+                    read -p "按 Enter 返回菜单..."
+                    continue 2
                 fi
-                break
+                if [[ -d "$DASHBOARD_DIR" ]] && [[ -n "$(find "$DASHBOARD_DIR" -mindepth 1 -maxdepth 1 2>/dev/null)" ]]; then
+                    echo "✅ 检测到 $DASHBOARD_DIR 中有文件，正在执行节点切换..."
+                    check_curl
+                    curl_code=$(curl -s -o /dev/null -w '%{http_code}' -X PUT "http://127.0.0.1:9090/proxies/国外代理" \
+                        -H "Content-Type: application/json" \
+                        -d '{"name":"订阅1国外自动"}')
+                    if [[ "$curl_code" -ge 200 ]] && [[ "$curl_code" -lt 300 ]]; then
+                        echo "✅ 节点切换成功。"
+                    else
+                        echo "⚠️  节点切换请求返回 HTTP $curl_code，可能需要手动检查。"
+                    fi
+                    break
+                fi
+                # 每 5 秒打印一次进度
+                if (( i > 0 )) && (( i % 5 == 0 )); then
+                    echo "⏳ 已等待 ${i} 秒，继续等待 $DASHBOARD_DIR ..."
+                fi
+                sleep 1
+            done
+
+            if (( i >= 60 )); then
+                echo "⚠️  等待超时（60 秒），$DASHBOARD_DIR 尚未生成文件，跳过自动节点切换。"
             fi
-            # 每 5 秒打印一次进度
-            if (( i > 0 )) && (( i % 5 == 0 )); then
-                echo "⏳ 已等待 ${i} 秒，继续等待 $DASHBOARD_DIR ..."
+
+            echo "ℹ️  脚本转入守护模式，按 Ctrl+C 退出。"
+            # 清除 EXIT trap，避免正常退出时执行 cleanup
+            trap - EXIT
+            trap 'echo ""; echo "⚠️  Sing-box 进程已退出。"; exit 0' SIGINT SIGTERM
+            wait "$SING_BOX_PID" 2>/dev/null
+            SING_BOX_PID=""
+            echo "⚠️  Sing-box 进程已退出。"
+            exit 0
+            ;;
+
+        2)
+            echo "📝 更新订阅链接"
+            echo "💡 提示：如果只输入一个链接，它将被复制到所有三个位置。"
+
+            read -p "请输入 订阅1 链接: " url1
+            read -p "请输入 订阅2 链接 (可留空): " url2
+            read -p "请输入 订阅3 链接 (可留空): " url3
+
+            final_url1="${url1}"
+            final_url2="${url2:-${url1}}"
+            final_url3="${url3:-${url1}}"
+
+            if [[ -z "$final_url1" ]]; then
+                echo "❌ 错误：你没有输入任何链接！"
+                read -p "按 Enter 返回菜单..."
+                continue
             fi
-            sleep 1
-        done
 
-        if (( i >= 60 )); then
-            echo "⚠️  等待超时（60 秒），$DASHBOARD_DIR 尚未生成文件，跳过自动节点切换。"
-        fi
+            # 备份（统一日期格式，跨平台兼容）
+            backup_name="${CONFIG_FILE}.backup_$(date +%Y%m%d_%H%M%S)"
+            cp "$CONFIG_FILE" "$backup_name"
+            echo "📄 已备份原配置文件 → $backup_name"
 
-        echo "ℹ️  脚本转入守护模式，按 Ctrl+C 退出。"
-        # 清除 EXIT trap，避免正常退出时执行 cleanup
-        trap - EXIT
-        trap 'echo ""; echo "⚠️  Sing-box 进程已退出。"; exit 0' SIGINT SIGTERM
-        wait "$SING_BOX_PID" 2>/dev/null
-        SING_BOX_PID=""
-        echo "⚠️  Sing-box 进程已退出。"
-        exit 0
-        ;;
+            # 转义替换文本中的特殊字符（用于 sed 分隔符 |）
+            # 需要转义的：\、&、|
+            esc_url1=$(printf '%s' "$final_url1" | sed 's/[\\&|]/\\&/g')
+            esc_url2=$(printf '%s' "$final_url2" | sed 's/[\\&|]/\\&/g')
+            esc_url3=$(printf '%s' "$final_url3" | sed 's/[\\&|]/\\&/g')
 
-    2)
-        echo "📝 更新订阅链接"
-        echo "💡 提示：如果只输入一个链接，它将被复制到所有三个位置。"
+            # 使用 | 作为 sed 分隔符，避免 URL 中的 / 冲突
+            sed_inplace "s|${PLACEHOLDER}|${esc_url1}|1" "$CONFIG_FILE"
+            sed_inplace "s|${PLACEHOLDER}|${esc_url2}|1" "$CONFIG_FILE"
+            sed_inplace "s|${PLACEHOLDER}|${esc_url3}|1" "$CONFIG_FILE"
 
-        read -p "请输入 订阅1 链接: " url1
-        read -p "请输入 订阅2 链接 (可留空): " url2
-        read -p "请输入 订阅3 链接 (可留空): " url3
+            echo "✅ 成功！配置文件已更新。"
+            echo "   订阅1: $(mask_url "$final_url1")"
+            echo "   订阅2: $(mask_url "$final_url2")"
+            echo "   订阅3: $(mask_url "$final_url3")"
+            read -p "按 Enter 返回菜单..."
+            ;;
 
-        final_url1="${url1}"
-        final_url2="${url2:-${url1}}"
-        final_url3="${url3:-${url1}}"
+        3)
+            echo "🔧 自动修复：清除缓存文件..."
 
-        if [[ -z "$final_url1" ]]; then
-            echo "❌ 错误：你没有输入任何链接！"
-            exit 1
-        fi
+            if [[ -f "cache.db" ]]; then
+                rm -f "cache.db"
+                echo "   ✅ 已删除 cache.db"
+            else
+                echo "   ℹ️  cache.db 不存在，跳过"
+            fi
 
-        # 备份（统一日期格式，跨平台兼容）
-        backup_name="${CONFIG_FILE}.backup_$(date +%Y%m%d_%H%M%S)"
-        cp "$CONFIG_FILE" "$backup_name"
-        echo "📄 已备份原配置文件 → $backup_name"
+            if [[ -d "run" ]]; then
+                rm -rf "run"
+                echo "   ✅ 已删除 run 目录"
+            else
+                echo "   ℹ️  run 目录不存在，跳过"
+            fi
 
-        # 转义替换文本中的特殊字符（用于 sed 分隔符 |）
-        # 需要转义的：\、&、|
-        esc_url1=$(printf '%s' "$final_url1" | sed 's/[\\&|]/\\&/g')
-        esc_url2=$(printf '%s' "$final_url2" | sed 's/[\\&|]/\\&/g')
-        esc_url3=$(printf '%s' "$final_url3" | sed 's/[\\&|]/\\&/g')
+            echo "✅ 缓存清理完成！"
+            read -p "按 Enter 返回菜单..."
+            ;;
 
-        # 使用 | 作为 sed 分隔符，避免 URL 中的 / 冲突
-        sed_inplace "s|${PLACEHOLDER}|${esc_url1}|1" "$CONFIG_FILE"
-        sed_inplace "s|${PLACEHOLDER}|${esc_url2}|1" "$CONFIG_FILE"
-        sed_inplace "s|${PLACEHOLDER}|${esc_url3}|1" "$CONFIG_FILE"
+        4)
+            echo "🔄 重置配置：从备份恢复..."
 
-        echo "✅ 成功！配置文件已更新。"
-        echo "   订阅1: $(mask_url "$final_url1")"
-        echo "   订阅2: $(mask_url "$final_url2")"
-        echo "   订阅3: $(mask_url "$final_url3")"
-        ;;
+            # 查找最新的备份文件
+            latest_backup=$(ls -t ${CONFIG_FILE}.backup_* 2>/dev/null | head -n 1)
 
-    3)
-        echo "🔧 自动修复：清除缓存文件..."
+            if [[ -z "$latest_backup" ]]; then
+                echo "❌ 错误：未找到任何备份文件！"
+                echo "   备份文件格式：config.json.backup_YYYYMMDD_HHMMSS"
+                read -p "按 Enter 返回菜单..."
+                continue
+            fi
 
-        if [[ -f "cache.db" ]]; then
-            rm -f "cache.db"
-            echo "   ✅ 已删除 cache.db"
-        else
-            echo "   ℹ️  cache.db 不存在，跳过"
-        fi
+            echo "   找到最新备份: $latest_backup"
+            read -p "确定要恢复此备份吗？(y/N): " confirm
+            [[ "$confirm" =~ ^[Yy]$ ]] || {
+                read -p "按 Enter 返回菜单..."
+                continue
+            }
 
-        if [[ -d "run" ]]; then
-            rm -rf "run"
-            echo "   ✅ 已删除 run 目录"
-        else
-            echo "   ℹ️  run 目录不存在，跳过"
-        fi
+            cp "$latest_backup" "$CONFIG_FILE"
+            echo "✅ 配置已恢复自 $latest_backup"
+            read -p "按 Enter 返回菜单..."
+            ;;
 
-        echo "✅ 缓存清理完成！"
-        ;;
+        5)
+            echo "👋 再见！"
+            exit 0
+            ;;
 
-    4)
-        echo "🔄 重置配置：从备份恢复..."
-
-        # 查找最新的备份文件
-        latest_backup=$(ls -t ${CONFIG_FILE}.backup_* 2>/dev/null | head -n 1)
-
-        if [[ -z "$latest_backup" ]]; then
-            echo "❌ 错误：未找到任何备份文件！"
-            echo "   备份文件格式：config.json.backup_YYYYMMDD_HHMMSS"
-            exit 1
-        fi
-
-        echo "   找到最新备份: $latest_backup"
-        read -p "确定要恢复此备份吗？(y/N): " confirm
-        [[ "$confirm" =~ ^[Yy]$ ]] || exit 0
-
-        cp "$latest_backup" "$CONFIG_FILE"
-        echo "✅ 配置已恢复自 $latest_backup"
-        ;;
-
-    *)
-        echo "❌ 无效选择，请输入 1-4。"
-        exit 1
-        ;;
-esac
+        *)
+            echo "❌ 无效选择，请输入 1-5。"
+            read -p "按 Enter 继续..."
+            ;;
+    esac
+done

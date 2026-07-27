@@ -18,6 +18,7 @@ set PLACEHOLDER=订阅链接
 set TARGET_BINARY=sing-box.exe
 set GITHUB_REPO=LMQ00/sing-box
 set GITHUB_API=https://api.github.com/repos/%GITHUB_REPO%/releases/latest
+set DASHBOARD_DIR=.\dashboard
 
 cls
 echo ==================================
@@ -56,10 +57,13 @@ if /i "%REAL_ARCH%"=="ARM64" (
 )
 echo 💻 检测到架构: %PLATFORM%
 
+REM --- 加速链接列表（按优先级排序） ---
+set "MIRRORS=https://gh.xmly.dev https://ghfast.top https://ghgo.xyz https://gh-proxy.com https://mirror.ghproxy.com"
+
 REM --- 检查是否已存在 sing-box.exe ---
 if exist "%TARGET_BINARY%" (
-    echo ✅ 检测到现有 sing-box.exe 文件，跳过下载。
-    echo    如需更新，请删除 %TARGET_BINARY% 后重新运行脚本。
+    echo [OK] sing-box.exe found, skip download.
+    echo    To update, delete %TARGET_BINARY% and re-run.
     goto check_config
 )
 
@@ -91,9 +95,6 @@ set "DOWNLOAD_URL=https://github.com/%GITHUB_REPO%/releases/download/%TAG%/%DOWN
 REM --- 创建临时目录 ---
 set "TEMP_DIR=%TEMP%\sing-box-%RANDOM%"
 mkdir "%TEMP_DIR%" 2>nul
-
-REM --- 加速链接列表（按优先级排序） ---
-set "MIRRORS=https://ghfast.top https://ghgo.xyz https://gh-proxy.com https://mirror.ghproxy.com"
 
 REM --- 尝试直接下载 ---
 echo 📥 正在下载: %DOWNLOAD_FILE%
@@ -174,24 +175,31 @@ if not exist "%TARGET_BINARY%" (
     exit /b 1
 )
 
+REM --- 下载 Dashboard（与二进制文件同时部署） ---
+call :download_dashboard
+
 echo ✅ 准备启动。
+echo.
 
 REM ===================== 主菜单 =====================
+:menu
 echo ==================================
 echo 1. 启动 sing-box 核心
 echo 2. 更新订阅链接
 echo 3. 自动修复（清除缓存）
 echo 4. 重置配置（从备份恢复）
+echo 5. Exit
 echo ==================================
-set /p choice=请选择操作 (1-4):
+set /p choice=请选择操作 (1-5):
 
 if "%choice%"=="1" goto start
 if "%choice%"=="2" goto update
 if "%choice%"=="3" goto fix
 if "%choice%"=="4" goto reset
-echo ❌ 无效选择，请输入 1-4。
+if "%choice%"=="5" exit /b
+echo ❌ 无效选择，请输入 1-5。
 pause
-exit /b 1
+goto menu
 
 REM ===================== 启动 sing-box =====================
 :start
@@ -203,7 +211,7 @@ if %errorlevel% neq 0 goto run_singbox
 echo 🚨 警告：配置文件中检测到未替换的 '%PLACEHOLDER%'！
 echo    程序可能无法正常运行。
 set /p confirm=确定要继续启动吗？(y/N):
-if /i not "%confirm%"=="y" exit /b 0
+if /i not "%confirm%"=="y" goto menu
 
 :run_singbox
 if not exist "run" mkdir "run"
@@ -245,6 +253,89 @@ if exist "run\sing-box.log" (
 goto watch_log
 exit /b 0
 
+REM ===================== 下载 Dashboard =====================
+:download_dashboard
+if exist "%DASHBOARD_DIR%" (
+    dir /b "%DASHBOARD_DIR%\*" >nul 2>nul && (
+        echo ✅ Dashboard 已存在，跳过下载。
+        exit /b 0
+    )
+)
+
+REM --- 第1步：从 config.json 提取 external_ui_download_url ---
+set "DASHBOARD_URL="
+set "PS_SCRIPT=%TEMP%\dash_extract_%RANDOM%.ps1"
+REM 写 .ps1 文件到 temp（逐行 echo，不用 (...) 块避免引号/括号冲突）
+echo $cfg = Get-Content '%CONFIG_FILE%' -Raw -Encoding UTF8> "%PS_SCRIPT%"
+echo $m = [regex]::Match($cfg, '"external_ui_download_url"\s*:\s*"([^\x22]+)"')>> "%PS_SCRIPT%"
+echo if ($m.Success) { Write-Host $m.Groups[1].Value }>> "%PS_SCRIPT%"
+for /f "delims=" %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -File "%PS_SCRIPT%"') do set "DASHBOARD_URL=%%i"
+del "%PS_SCRIPT%" 2>nul
+
+if not defined DASHBOARD_URL (
+    echo ℹ️  config.json 中未配置 external_ui_download_url，跳过 Dashboard 下载。
+    exit /b 0
+)
+
+echo 📥 正在下载 Dashboard...
+
+set "TEMP_DIR=%TEMP%\dashboard-%RANDOM%" 2>nul
+mkdir "%TEMP_DIR%" 2>nul
+set "ZIP_FILE=%TEMP_DIR%\dashboard.zip"
+
+REM --- 第2步：直连下载 + 加速链接负载均衡 ---
+set "DL_OK=0"
+echo 📥 尝试直连...
+curl -L --connect-timeout 15 --max-time 120 -o "%ZIP_FILE%" "%DASHBOARD_URL%" 2>nul
+if %errorlevel% equ 0 if exist "%ZIP_FILE%" (
+    for %%a in ("%ZIP_FILE%") do if %%~za GTR 1000 set "DL_OK=1"
+)
+
+REM 如果直连失败且是 GitHub 地址，依次尝试加速链接
+if "%DL_OK%"=="0" (
+    echo %DASHBOARD_URL% | findstr "github.com" >nul
+    if not errorlevel 1 (
+        echo ⚠️  直连失败，尝试加速链接...
+
+        REM 剥离已知镜像前缀，获取原始 GitHub URL
+        set "RAW_URL=%DASHBOARD_URL%"
+        for %%m in (%MIRRORS%) do (
+            set "TMP_URL=!RAW_URL:%%m/=!"
+            if not "!TMP_URL!"=="!RAW_URL!" set "RAW_URL=!TMP_URL!"
+        )
+
+        for %%m in (%MIRRORS%) do (
+            if "!DL_OK!"=="0" (
+                echo 🔄 尝试加速链接: %%m
+                curl -L --connect-timeout 15 --max-time 120 -o "!ZIP_FILE!" "%%m/!RAW_URL!" 2>nul
+                if !errorlevel! equ 0 if exist "!ZIP_FILE!" (
+                    for %%a in ("!ZIP_FILE!") do if %%~za GTR 1000 set "DL_OK=1"
+                )
+                if "!DL_OK!"=="1" echo ✅ 加速链接下载成功: %%m
+            )
+        )
+    )
+)
+
+if "%DL_OK%"=="0" (
+    echo ⚠️  Dashboard 所有下载链接均失败，跳过。
+    rmdir /s /q "%TEMP_DIR%" 2>nul
+    exit /b 0
+)
+
+echo 📦 正在解压 Dashboard...
+
+REM --- 第3步：解压到 dashboard 目录 ---
+mkdir "%DASHBOARD_DIR%" 2>nul
+powershell -NoProfile -ExecutionPolicy Bypass -Command "try{$e='%TEMP_DIR%\extracted';Expand-Archive -Path '%ZIP_FILE%' -DestinationPath $e -Force;$i=Get-ChildItem $e;if($i.Count-eq1-and$i[0].PSIsContainer){$s=$i[0].FullName;Get-ChildItem $s|Copy-Item -Destination '%DASHBOARD_DIR%' -Recurse -Force}else{Get-ChildItem $e|Copy-Item -Destination '%DASHBOARD_DIR%' -Recurse -Force};Write-Host '✅ Dashboard 部署完成！路径: %DASHBOARD_DIR%'}catch{exit 1}"
+
+if %errorlevel% neq 0 (
+    echo ⚠️  Dashboard 解压失败，跳过。
+)
+
+rmdir /s /q "%TEMP_DIR%" 2>nul
+exit /b 0
+
 REM ===================== 更新订阅链接 =====================
 :update
 echo 📝 更新订阅链接
@@ -281,11 +372,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -NoLogo -Command ^
 if %errorlevel% neq 0 (
     echo ❌ 更新失败！请检查 PowerShell 是否可用。
     pause
-    exit /b 1
+    goto menu
 )
 
 pause
-exit /b 0
+goto menu
 
 REM ===================== 自动修复：清除缓存 =====================
 :fix
@@ -307,7 +398,7 @@ if exist "run" (
 
 echo ✅ 缓存清理完成！
 pause
-exit /b 0
+goto menu
 
 REM ===================== 重置配置：从备份恢复 =====================
 :reset
@@ -323,12 +414,12 @@ if not defined LATEST_BACKUP (
     echo ❌ 错误：未找到任何备份文件！
     echo    备份文件格式：config.json.backup_YYYYMMDD_HHMMSS
     pause
-    exit /b 1
+    goto menu
 )
 
 call echo    找到最新备份: %%LATEST_BACKUP%%
 set /p confirm=确定要恢复此备份吗？(y/N):
-if /i not "%confirm%"=="y" exit /b 0
+if /i not "%confirm%"=="y" goto menu
 
 call copy /y "%%LATEST_BACKUP%%" "%CONFIG_FILE%" >nul 2>nul
 if %errorlevel% equ 0 (
@@ -338,4 +429,4 @@ if %errorlevel% equ 0 (
 )
 
 pause
-exit /b 0
+goto menu
