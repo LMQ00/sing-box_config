@@ -231,18 +231,18 @@ for /f %%f in ('dir /b /o-n "run\*.log" 2^>nul') do (
 
 echo.
 echo ==================================
-echo   ✅ sing-box 已成功启动！
+echo   [OK] sing-box started!
 echo ==================================
-echo   📊 管理面板: http://127.0.0.1:9090/ui/
-echo   📡 API 地址: http://127.0.0.1:9090
+echo   Dashboard: http://127.0.0.1:9090/ui/
+echo   API:      http://127.0.0.1:9090
 echo ==================================
 echo.
 
 REM 后台启动 sing-box
 start "" /B .\sing-box.exe run -c "%CONFIG_FILE%" -D .\ > "run\sing-box.log" 2>&1
-echo ⏳ Sing-box 已在后台启动。
-echo 📋 日志文件: run\sing-box.log
-echo ℹ️  按任意键查看日志，按 Ctrl+C 退出。
+echo [OK] sing-box running in background.
+echo Log: run\sing-box.log
+echo Press any key to view log, Ctrl+C to exit.
 
 :watch_log
 REM 按任意键打开日志
