@@ -24,16 +24,23 @@ TEMP_DIRS=()
 # --- 信号处理：优雅退出 ---
 cleanup() {
     echo ""
-    echo "🛑 正在停止 sing-box..."
     if [[ -n "${SING_BOX_PID:-}" ]]; then
-        sudo kill "$SING_BOX_PID" 2>/dev/null
+        echo "🛑 正在停止 sing-box..."
+        if [[ $EUID -eq 0 ]]; then
+            kill "$SING_BOX_PID" 2>/dev/null
+            # 兜底：确保 sing-box 进程真正退出（如 sudo 包装进程未转发信号）
+            pkill -TERM -x sing-box 2>/dev/null || true
+        else
+            sudo kill "$SING_BOX_PID" 2>/dev/null
+            sudo pkill -TERM -x sing-box 2>/dev/null || true
+        fi
         wait "$SING_BOX_PID" 2>/dev/null
+        echo "✅ sing-box 已停止。"
     fi
     # 清理临时目录
     for d in "${TEMP_DIRS[@]}"; do
         [[ -d "$d" ]] && rm -rf "$d"
     done
-    echo "✅ sing-box 已停止。"
 }
 trap cleanup SIGINT SIGTERM EXIT
 
@@ -51,6 +58,13 @@ sed_inplace() {
 
 # --- 检查 sudo 是否可用 ---
 ensure_sudo() {
+    # 已是 root 则无需 sudo（容器/WSL root/Termux 场景）
+    [[ $EUID -eq 0 ]] && return 0
+    if ! command -v sudo &>/dev/null; then
+        echo "❌ 错误：未找到 sudo 命令，且当前不是 root。"
+        echo "   请以 root 身份运行，或安装 sudo。"
+        exit 1
+    fi
     if ! sudo -n true 2>/dev/null; then
         echo "🔑 需要管理员权限来运行 sing-box，请输入密码..."
         if ! sudo -v; then
@@ -72,27 +86,11 @@ check_curl() {
 cleanup_old_logs() {
     local dir="$1"
     local max="$2"
-    mkdir -p "$dir"
-    local count
-    count=$(find "$dir" -maxdepth 1 -name '*.log' -type f 2>/dev/null | wc -l)
-    count=$((count + 0))  # trim whitespace
-    if (( count > max )); then
-        local remove_count=$(( count - max ))
-        # macOS 用 stat -f，Linux 用 stat -c
-        if [[ "$OSTYPE" == darwin* ]]; then
-            find "$dir" -maxdepth 1 -name '*.log' -type f -exec stat -f '%m %N' {} + 2>/dev/null \
-                | sort -n \
-                | head -n "$remove_count" \
-                | awk '{print $2}' \
-                | xargs rm -f
-        else
-            find "$dir" -maxdepth 1 -name '*.log' -type f -printf '%T@ %p\n' 2>/dev/null \
-                | sort -n \
-                | head -n "$remove_count" \
-                | awk '{print $2}' \
-                | xargs rm -f
-        fi
-    fi
+    mkdir -p "$dir" || return 1
+    # 按修改时间倒序，删除超出 max 的最旧日志（兼容含空格的路径）
+    ls -1t "$dir"/*.log 2>/dev/null \
+        | tail -n +$((max + 1)) \
+        | while IFS= read -r f; do rm -f -- "$f"; done
 }
 
 # --- 脱敏显示 URL ---
@@ -125,7 +123,7 @@ download_dashboard() {
     echo "📥 正在下载 Dashboard..."
 
     local temp_dir
-    temp_dir=$(mktemp -d)
+    temp_dir=$(mktemp -d) || { echo "❌ 错误：无法创建临时目录"; return 0; }
     TEMP_DIRS+=("$temp_dir")
 
     local temp_zip="$temp_dir/dashboard.zip"
@@ -191,7 +189,11 @@ download_dashboard() {
     mkdir -p "$extract_dir"
 
     if command -v unzip &>/dev/null; then
-        unzip -o "$temp_zip" -d "$extract_dir" > /dev/null 2>&1
+        unzip -o "$temp_zip" -d "$extract_dir" > /dev/null 2>&1 || {
+            echo "⚠️  Dashboard 解压失败，跳过。"
+            rm -rf "$temp_dir"
+            return 0
+        }
     else
         # fallback: 用 tar 尝试解压（部分 zip 兼容）
         tar -xzf "$temp_zip" -C "$extract_dir" 2>/dev/null || {
@@ -214,17 +216,21 @@ download_dashboard() {
         local sub_count
         sub_count=$(echo "$subdirs" | wc -l)
         if [[ "$sub_count" -eq 1 ]]; then
-            cp -r "$single_dir"/* "$DASHBOARD_DIR" 2>/dev/null
-            cp -r "$single_dir"/.* "$DASHBOARD_DIR" 2>/dev/null || true
+            # 注意：不用 `$single_dir`/.* 通配（bash≤5.1 会把 . 和 .. 一并展开，导致目录递归复制）
+            cp -r "$single_dir"/. "$DASHBOARD_DIR" 2>/dev/null || true
         else
-            cp -r "$extract_dir"/* "$DASHBOARD_DIR" 2>/dev/null
+            cp -r "$extract_dir"/* "$DASHBOARD_DIR" 2>/dev/null || true
         fi
     else
-        cp -r "$extract_dir"/* "$DASHBOARD_DIR" 2>/dev/null
+        cp -r "$extract_dir"/* "$DASHBOARD_DIR" 2>/dev/null || true
     fi
 
     rm -rf "$temp_dir"
-    echo "✅ Dashboard 部署完成！路径: $DASHBOARD_DIR"
+    if [[ -n "$(find "$DASHBOARD_DIR" -mindepth 1 -maxdepth 1 2>/dev/null)" ]]; then
+        echo "✅ Dashboard 部署完成！路径: $DASHBOARD_DIR"
+    else
+        echo "⚠️  Dashboard 解压后目录为空，部署可能失败。路径: $DASHBOARD_DIR"
+    fi
 }
 
 # ===================== 检测系统架构 =====================
@@ -275,8 +281,11 @@ download_and_validate() {
         local fsize
         fsize=$(stat -f%z "$output" 2>/dev/null || stat -c%s "$output" 2>/dev/null || echo 0)
         if [[ -f "$output" ]] && [[ "$fsize" -gt 1000 ]]; then
-            # 验证是否为有效的 gzip 文件
-            if file "$output" | grep -q "gzip"; then
+            # 验证是否为有效的 gzip 文件（优先 gzip -t，回退 file(1)，兼容精简系统）
+            if gzip -t "$output" 2>/dev/null; then
+                return 0
+            fi
+            if command -v file &>/dev/null && file "$output" | grep -q "gzip"; then
                 return 0
             fi
             echo "⚠️  下载的文件格式异常，重试..."
@@ -310,7 +319,7 @@ download_latest_version() {
 
     # 下载文件
     local temp_dir
-    temp_dir=$(mktemp -d)
+    temp_dir=$(mktemp -d) || { echo "❌ 错误：无法创建临时目录"; return 1; }
     TEMP_DIRS+=("$temp_dir")
 
     # 尝试直接下载
@@ -410,11 +419,12 @@ while true; do
     echo "=================================="
     echo "1. 启动 sing-box 核心"
     echo "2. 更新订阅链接"
-    echo "3. 自动修复（清除缓存）"
-    echo "4. 重置配置（从备份恢复）"
-    echo "5. 退出"
+    echo "3. 自动修复(清除缓存)"
+    echo "4. 重置配置(从备份恢复)"
+    echo "5. 更新内核"
+    echo "6. 退出"
     echo "=================================="
-    read -p "请选择操作 (1-5): " choice
+    read -r -p "请选择操作 (1-6): " choice || { echo "⚠️  输入流已关闭，退出。"; exit 1; }
 
     case $choice in
         1)
@@ -427,12 +437,19 @@ while true; do
                 [[ "$confirm" =~ ^[Yy]$ ]] || continue
             fi
 
-            # 清理旧日志，只保留最近 MAX_LOGS 个
+            # 轮转日志：当前日志改名带时间戳，再清理只保留最近 MAX_LOGS 个
+            if [[ -f "$LOG_FILE" ]]; then
+                mv "$LOG_FILE" "$RUN_DIR/sing-box-$(date +%Y%m%d_%H%M%S).log" 2>/dev/null || true
+            fi
             cleanup_old_logs "$RUN_DIR" "$MAX_LOGS"
 
-            ensure_sudo
-
-            sudo "$TARGET_BINARY" run -c "$CONFIG_FILE" -D ./ > "$LOG_FILE" 2>&1 &
+            # root 直接运行，否则 sudo 提权
+            if [[ $EUID -eq 0 ]]; then
+                "$TARGET_BINARY" run -c "$CONFIG_FILE" -D ./ > "$LOG_FILE" 2>&1 &
+            else
+                ensure_sudo
+                sudo "$TARGET_BINARY" run -c "$CONFIG_FILE" -D ./ > "$LOG_FILE" 2>&1 &
+            fi
             SING_BOX_PID=$!
 
             # 等待进程启动
@@ -484,7 +501,6 @@ while true; do
             trap - EXIT
             trap 'echo ""; echo "⚠️  Sing-box 进程已退出。"; exit 0' SIGINT SIGTERM
             wait "$SING_BOX_PID" 2>/dev/null
-            SING_BOX_PID=""
             echo "⚠️  Sing-box 进程已退出。"
             exit 0
             ;;
@@ -507,9 +523,21 @@ while true; do
                 continue
             fi
 
+            # 占位符不存在时 sed 会静默空转并谎报成功，这里提前说明
+            if ! grep -q "$PLACEHOLDER" "$CONFIG_FILE"; then
+                echo "⚠️  配置文件中未找到占位符 '$PLACEHOLDER'（可能已配置过订阅）。"
+                echo "   脚本不会重复替换已有订阅，如需修改请直接编辑 config.json。"
+                read -p "按 Enter 返回菜单..."
+                continue
+            fi
+
             # 备份（统一日期格式，跨平台兼容）
             backup_name="${CONFIG_FILE}.backup_$(date +%Y%m%d_%H%M%S)"
-            cp "$CONFIG_FILE" "$backup_name"
+            if ! cp "$CONFIG_FILE" "$backup_name"; then
+                echo "❌ 错误：备份失败，已中止更新！"
+                read -p "按 Enter 返回菜单..."
+                continue
+            fi
             echo "📄 已备份原配置文件 → $backup_name"
 
             # 转义替换文本中的特殊字符（用于 sed 分隔符 |）
@@ -522,6 +550,13 @@ while true; do
             sed_inplace "s|${PLACEHOLDER}|${esc_url1}|1" "$CONFIG_FILE"
             sed_inplace "s|${PLACEHOLDER}|${esc_url2}|1" "$CONFIG_FILE"
             sed_inplace "s|${PLACEHOLDER}|${esc_url3}|1" "$CONFIG_FILE"
+
+            # 统计剩余占位符（订阅少于 3 条时属正常）
+            remaining=$(grep -o "$PLACEHOLDER" "$CONFIG_FILE" | wc -l)
+            remaining=$((remaining + 0))
+            if (( remaining > 0 )); then
+                echo "⚠️  仍有 $remaining 个占位符未替换（订阅数量少于 3 时正常）。"
+            fi
 
             echo "✅ 成功！配置文件已更新。"
             echo "   订阅1: $(mask_url "$final_url1")"
@@ -555,7 +590,7 @@ while true; do
             echo "🔄 重置配置：从备份恢复..."
 
             # 查找最新的备份文件
-            latest_backup=$(ls -t ${CONFIG_FILE}.backup_* 2>/dev/null | head -n 1)
+            latest_backup=$(ls -t "$CONFIG_FILE".backup_* 2>/dev/null | head -n 1)
 
             if [[ -z "$latest_backup" ]]; then
                 echo "❌ 错误：未找到任何备份文件！"
@@ -571,18 +606,52 @@ while true; do
                 continue
             }
 
-            cp "$latest_backup" "$CONFIG_FILE"
+            cp "$latest_backup" "$CONFIG_FILE" || {
+                echo "❌ 错误：恢复失败！"
+                read -p "按 Enter 返回菜单..."
+                continue
+            }
             echo "✅ 配置已恢复自 $latest_backup"
             read -p "按 Enter 返回菜单..."
             ;;
 
         5)
+            echo "🔄 正在更新 sing-box 核心..."
+
+            # 备份现有二进制文件
+            if [[ -f "$TARGET_BINARY" ]]; then
+                backup_name="${TARGET_BINARY}.backup_$(date +%Y%m%d_%H%M%S)"
+                if ! cp "$TARGET_BINARY" "$backup_name"; then
+                    echo "❌ 错误：备份核心失败（文件可能被占用），已中止更新。"
+                    read -p "按 Enter 返回菜单..."
+                    continue
+                fi
+                echo "📄 已备份原核心 → $backup_name"
+            fi
+
+            echo "🔍 正在检测系统架构..."
+            platform=$(detect_platform) || {
+                echo "❌ 无法检测系统架构"
+                read -p "按 Enter 返回菜单..."
+                continue
+            }
+            echo "💻 检测到平台: $platform"
+
+            if download_latest_version "$platform"; then
+                echo "✅ 核心更新完成！"
+            else
+                echo "❌ 核心更新失败"
+            fi
+            read -p "按 Enter 返回菜单..."
+            ;;
+
+        6)
             echo "👋 再见！"
             exit 0
             ;;
 
         *)
-            echo "❌ 无效选择，请输入 1-5。"
+            echo "❌ 无效选择，请输入 1-6。"
             read -p "按 Enter 继续..."
             ;;
     esac

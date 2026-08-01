@@ -31,7 +31,7 @@ cd sing-box_config
 
 运行管理脚本会自动检测您的系统架构，并从 GitHub 下载最新版本的 sing-box 内核。首次运行时会自动下载，无需手动操作。
 
-> 如需更新内核，只需删除根目录下的 `sing-box` (Linux/macOS) 或 `sing-box.exe` (Windows) 文件，然后重新运行脚本。
+> 如需更新内核：直接运行脚本并选择 **选项 5（Update Core）**；或删除根目录下的 `sing-box` (Linux/macOS) / `sing-box.exe` (Windows) 文件后重新运行脚本。
 
 **内核信息：**
 
@@ -71,6 +71,7 @@ start.bat
 | **2** | 更新订阅 | 输入订阅链接，自动备份当前配置后更新 |
 | **3** | 自动修复 | 清除 `cache.db` 缓存文件和 `run/` 运行目录 |
 | **4** | 重置配置 | 从最近一次备份恢复 `config.json` |
+| **5** | 更新内核 | 备份当前 sing-box 内核后从 GitHub 下载最新版 |
 
 > `start.sh` 额外支持：后台守护运行、日志轮转、Dashboard 就绪检测及自动节点切换。
 

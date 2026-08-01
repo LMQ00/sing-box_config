@@ -81,7 +81,8 @@
           "qpic",
           "mmbiz",
           "gtimg.com",
-          "flow.mxzu.net"
+          "flow.mxzu.net",
+          "opencode.ai"
         ],
         "server": "alidns"
       },
@@ -439,7 +440,8 @@
           "qpic",
           "mmbiz",
           "gtimg.com",
-          "flow.mxzu.net"
+          "flow.mxzu.net",
+          "opencode.ai"
         ],
         "outbound": "国内代理"
       },

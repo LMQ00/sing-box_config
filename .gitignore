@@ -1,6 +1,5 @@
 # sing-box 二进制文件
-sing-box
-sing-box.exe
+sing-box*
 bin/
 
 # 运行时文件
