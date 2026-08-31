@@ -81,8 +81,8 @@
           "qpic",
           "mmbiz",
           "gtimg.com",
-          "flow.mxzu.net",
-          "opencode.ai"
+          "opencode",
+          "flow.mxzu.net"
         ],
         "server": "alidns"
       },
@@ -103,12 +103,6 @@
     "disable_cache": true
   },
   "inbounds": [
-  //   {
- //     "type": "tproxy",
- //     "tag": "tproxy-in",
- //     "listen": "::",
- //     "listen_port": 1536
- //   }
     {
       "type": "tun",
       "tag": "tun-in",
@@ -170,8 +164,8 @@
       "providers": [
         "订阅1"
       ],
-      "include": "CN|电信|联通|移动",
-      "exclude": "禁止|剩余|到期|以下|官网",
+      "include": "CN|电信|联通|移动|BGP",
+      "exclude": "禁止|剩余|到期|以下|官网|订阅|群",
       "interrupt_exist_connections": true
     },
     {
@@ -181,8 +175,8 @@
       "providers": [
         "订阅1"
       ],
-      "include": "CN|电信|联通|移动",
-      "exclude": "tcp|禁止|剩余|到期|以下|官网",
+      "include": "CN|电信|联通|移动|BGP",
+      "exclude": "tcp|禁止|剩余|到期|以下|官网|订阅|群",
       "interval": "5m0s",
       "tolerance": 50,
       "interrupt_exist_connections": true
@@ -194,7 +188,7 @@
       "providers": [
         "订阅1"
       ],
-      "exclude": "CN|电信|联通|移动|禁止|剩余|到期|以下|官网",
+      "exclude": "CN|电信|联通|移动|禁止|剩余|到期|以下|官网|订阅|BGP|群",
       "interrupt_exist_connections": true
     },
     {
@@ -204,7 +198,7 @@
       "providers": [
         "订阅1"
       ],
-      "exclude": "CN|电信|联通|移动|tcp|禁止|剩余|到期|以下|官网",
+      "exclude": "CN|电信|联通|移动|tcp|禁止|剩余|到期|以下|官网|订阅|BGP|群",
       "interval": "5m0s",
       "tolerance": 50,
       "interrupt_exist_connections": true
@@ -440,8 +434,8 @@
           "qpic",
           "mmbiz",
           "gtimg.com",
-          "flow.mxzu.net",
-          "opencode.ai"
+          "opencode",
+          "flow.mxzu.net"
         ],
         "outbound": "国内代理"
       },
@@ -531,9 +525,24 @@
       "store_fakeip": true
     },
     "clash_api": {
-      "external_controller": "0.0.0.0:9090",
-      "external_ui": "dashboard",
-      "external_ui_download_url": "https://gh-proxy.com/https://github.com/Zephyruso/zashboard/releases/latest/download/dist.zip"
+      "external_controller": "127.0.0.1:9091",
+      "default_mode": "全局代理",
+      "access_control_allow_private_network": true
     }
-  }
+  },
+  "services": [
+    {
+      "type": "api",
+      "listen": "::",
+      "listen_port": 9090,
+//      "secret": "singbox",
+      "dashboard": {
+        "enabled": true,
+        "path": "dashboard",
+        "download_url": "https://github.com/SagerNet/sing-box-dashboard/archive/refs/heads/gh-pages.zip",
+//        "http_client": "s-download",
+        "update_interval": "1d"
+      }
+    }
+  ]
 }
