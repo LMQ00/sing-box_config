@@ -338,9 +338,6 @@
         "no_drop": true
       },
       {
-        "action": "sniff"
-      },
-      {
         "type": "logical",
         "mode": "or",
         "rules": [
@@ -468,6 +465,10 @@
         "outbound": "国外代理",
         "action": "route-options",
         "override_address": "91.108.56.147"
+      },
+      {
+        "clash_mode": "规则模式",
+        "outbound": "国外代理"
       }
     ],
     "rule_set": [
@@ -526,7 +527,7 @@
     },
     "clash_api": {
       "external_controller": "127.0.0.1:9091",
-      "default_mode": "全局代理",
+      "default_mode": "规则模式",
       "access_control_allow_private_network": true
     }
   },
