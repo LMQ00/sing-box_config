@@ -338,6 +338,11 @@
         "no_drop": true
       },
       {
+		"ip_is_private": true,
+		"action": "route",
+        "outbound": "direct"
+      },
+      {
         "type": "logical",
         "mode": "or",
         "rules": [
