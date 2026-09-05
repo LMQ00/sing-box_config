@@ -545,8 +545,7 @@
       "dashboard": {
         "enabled": true,
         "path": "dashboard",
-        "download_url": "https://github.com/SagerNet/sing-box-dashboard/archive/refs/heads/gh-pages.zip",
-//        "http_client": "s-download",
+        "download_url": "https://github.com/LMQ00/sing-box-dashboard/archive/refs/heads/gh-pages.zip",
         "update_interval": "1d"
       }
     }
