@@ -1,55 +1,55 @@
 @echo off
-chcp 65001 > nul
+chcp 936 > nul
 setlocal enabledelayedexpansion
 
-REM --- åˆ‡æ¢åˆ°è„šæœ¬æ‰€åœ¨ç›®å½• ---
+REM --- ÇÐ»»µ½½Å±¾ËùÔÚÄ¿Â¼ ---
 cd /d "%~dp0"
 
-REM --- ç®¡ç†å‘˜ææƒï¼ˆå¤„ç†è·¯å¾„ç©ºæ ¼ï¼›ç”¨ IsInRole æ£€æµ‹ï¼Œé¿å…ä¾èµ– Server æœåŠ¡ï¼‰ ---
+REM --- ¹ÜÀíÔ±ÌáÈ¨£¨´¦ÀíÂ·¾¶¿Õ¸ñ£»ÓÃ IsInRole ¼ì²â£¬±ÜÃâÒÀÀµ Server ·þÎñ£© ---
 powershell -NoProfile -Command "exit ([int](-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)))" >nul 2>&1
 if %errorLevel% NEQ 0 (
-    echo æ­£åœ¨è¯·æ±‚ç®¡ç†å‘˜æƒé™...
+    echo ÕýÔÚÇëÇó¹ÜÀíÔ±È¨ÏÞ...
     powershell -Command "Start-Process cmd -ArgumentList '/c """%~dpfx0"""' -Verb RunAs"
     exit /b
 )
 
 set CONFIG_FILE=config.json
-set PLACEHOLDER=è®¢é˜…é“¾æŽ¥
+set PLACEHOLDER=¶©ÔÄÁ´½Ó
 set TARGET_BINARY=sing-box.exe
 set GITHUB_REPO=LMQ00/sing-box
 set GITHUB_API=https://api.github.com/repos/%GITHUB_REPO%/releases/latest
 set GITHUB_RELEASES_API=https://api.github.com/repos/%GITHUB_REPO%/releases?per_page=30
 set DASHBOARD_DIR=.\dashboard
-set M1=å¯åŠ¨ sing-box æ ¸å¿ƒ
-set M2=æ›´æ–°è®¢é˜…é“¾æŽ¥
-set M3=è‡ªåŠ¨ä¿®å¤(æ¸…é™¤ç¼“å­˜)
-set M4=é‡ç½®é…ç½®(ä»Žå¤‡ä»½æ¢å¤)
-set M5=æ›´æ–°å†…æ ¸
-set M6=é€€å‡º
+set M1=Æô¶¯ sing-box ºËÐÄ
+set M2=¸üÐÂ¶©ÔÄÁ´½Ó
+set M3=×Ô¶¯ÐÞ¸´(Çå³ý»º´æ)
+set M4=ÖØÖÃÅäÖÃ(´Ó±¸·Ý»Ö¸´)
+set M5=¸üÐÂÄÚºË
+set M6=ÍË³ö
 
 cls
 echo ==================================
-echo   sing-box ç®¡ç†è„šæœ¬ (Windowsç‰ˆ)
+echo   sing-box ¹ÜÀí½Å±¾ (Windows°æ)
 echo ==================================
 
-REM --- å‰ç½®æ£€æŸ¥ï¼šconfig.json ---
+REM --- Ç°ÖÃ¼ì²é£ºconfig.json ---
 if not exist "%CONFIG_FILE%" (
-    echo âŒ é”™è¯¯ï¼šæ‰¾ä¸åˆ°é…ç½®æ–‡ä»¶ %CONFIG_FILE%ï¼
+    echo [X] ´íÎó£ºÕÒ²»µ½ÅäÖÃÎÄ¼þ %CONFIG_FILE%£¡
     pause
     exit /b 1
 )
 
-REM --- æ£€æŸ¥ curl æ˜¯å¦å¯ç”¨ ---
+REM --- ¼ì²é curl ÊÇ·ñ¿ÉÓÃ ---
 where curl >nul 2>&1
 if %errorlevel% neq 0 (
-    echo âŒ é”™è¯¯ï¼šæœªæ‰¾åˆ° curl å‘½ä»¤ï¼Œè¯·å…ˆå®‰è£… curl æˆ–å‡çº§åˆ° Windows 10 1803+ã€‚
+    echo [X] ´íÎó£ºÎ´ÕÒµ½ curl ÃüÁî£¬ÇëÏÈ°²×° curl »òÉý¼¶µ½ Windows 10 1803+¡£
     pause
     exit /b 1
 )
 
-REM --- æ£€æµ‹ç³»ç»Ÿæž¶æž„ ---
-echo ðŸ” æ­£åœ¨æ£€æµ‹ç³»ç»Ÿæž¶æž„...
-REM å¤„ç† ARM64 WoW64 åœºæ™¯ï¼šcmd.exe ä»¥ x86 å…¼å®¹æ¨¡å¼è¿è¡Œæ—¶
+REM --- ¼ì²âÏµÍ³¼Ü¹¹ ---
+echo [*] ÕýÔÚ¼ì²âÏµÍ³¼Ü¹¹...
+REM ´¦Àí ARM64 WoW64 ³¡¾°£ºcmd.exe ÒÔ x86 ¼æÈÝÄ£Ê½ÔËÐÐÊ±
 if defined PROCESSOR_ARCHITEW6432 (
     set "REAL_ARCH=%PROCESSOR_ARCHITEW6432%"
 ) else (
@@ -62,12 +62,12 @@ if /i "%REAL_ARCH%"=="ARM64" (
 ) else (
     set PLATFORM=windows-amd64
 )
-echo ðŸ’» æ£€æµ‹åˆ°æž¶æž„: %PLATFORM%
+echo [*] ¼ì²âµ½¼Ü¹¹: %PLATFORM%
 
-REM --- åŠ é€Ÿé“¾æŽ¥åˆ—è¡¨ï¼ˆæŒ‰ä¼˜å…ˆçº§æŽ’åºï¼‰ ---
+REM --- ¼ÓËÙÁ´½ÓÁÐ±í£¨°´ÓÅÏÈ¼¶ÅÅÐò£© ---
 set "MIRRORS=https://gh.xmly.dev https://ghfast.top https://ghgo.xyz https://gh-proxy.com https://mirror.ghproxy.com"
 
-REM --- è‡ªåŠ¨éƒ¨ç½² sing-box æ ¸å¿ƒ ---
+REM --- ×Ô¶¯²¿Êð sing-box ºËÐÄ ---
 if not exist "%TARGET_BINARY%" (
     call :download_singbox
     if errorlevel 1 (
@@ -78,26 +78,26 @@ if not exist "%TARGET_BINARY%" (
 
 :check_config
 if not exist "%TARGET_BINARY%" (
-    echo âŒ é”™è¯¯ï¼šæ‰¾ä¸åˆ° sing-box.exeï¼
+    echo [X] ´íÎó£ºÕÒ²»µ½ sing-box.exe£¡
     pause
     exit /b 1
 )
 
-REM --- ä¸‹è½½ Dashboardï¼ˆä¸ŽäºŒè¿›åˆ¶æ–‡ä»¶åŒæ—¶éƒ¨ç½²ï¼‰ ---
+REM --- ÏÂÔØ Dashboard£¨Óë¶þ½øÖÆÎÄ¼þÍ¬Ê±²¿Êð£© ---
 call :download_dashboard
 
-echo âœ… å‡†å¤‡å¯åŠ¨ã€‚
+echo [OK] ×¼±¸Æô¶¯¡£
 echo.
 
 goto menu
 
-REM ===================== ä¸‹è½½ sing-box æ ¸å¿ƒ =====================
+REM ===================== ÏÂÔØ sing-box ºËÐÄ =====================
 :download_singbox
-echo ðŸ“¥ æ­£åœ¨ä»Ž GitHub ä¸‹è½½æœ€æ–°ç‰ˆæœ¬...
+echo [*] ÕýÔÚ´Ó GitHub ÏÂÔØ×îÐÂ°æ±¾...
 
-REM --- èŽ·å–æœ€æ–°ç‰ˆæœ¬å·ï¼ˆå–ã€Œç‰ˆæœ¬å·æœ€é«˜ã€çš„ releaseï¼Œå« alpha/beta/rc é¢„å‘å¸ƒï¼‰ ---
-REM     ä¸Šæ¸¸é¢„å‘å¸ƒä¸ä¼šæ ‡è®°ä¸º latestï¼Œ/releases/latest åªä¼šè¿”å›žç¨³å®šç‰ˆã€‚
-REM     å¯è®¾ç½® GITHUB_TOKEN æé«˜ API é™é¢ï¼Œæˆ–ç”¨ SINGBOX_TAG æ‰‹åŠ¨æŒ‡å®šç‰ˆæœ¬ã€‚
+REM --- »ñÈ¡×îÐÂ°æ±¾ºÅ£¨È¡¡¸°æ±¾ºÅ×î¸ß¡¹µÄ release£¬º¬ alpha/beta/rc Ô¤·¢²¼£© ---
+REM     ÉÏÓÎÔ¤·¢²¼²»»á±ê¼ÇÎª latest£¬/releases/latest Ö»»á·µ»ØÎÈ¶¨°æ¡£
+REM     ¿ÉÉèÖÃ GITHUB_TOKEN Ìá¸ß API ÏÞ¶î£¬»òÓÃ SINGBOX_TAG ÊÖ¶¯Ö¸¶¨°æ±¾¡£
 if defined SINGBOX_TAG (
     set "TAG=%SINGBOX_TAG%"
 ) else (
@@ -105,106 +105,106 @@ if defined SINGBOX_TAG (
 )
 
 if not defined TAG (
-    echo âŒ é”™è¯¯ï¼šæ— æ³•èŽ·å–ç‰ˆæœ¬å·ï¼Œå¯èƒ½æ˜¯ç½‘ç»œé—®é¢˜æˆ– API é™æµã€‚
-    echo    å¯è®¾ç½® GITHUB_TOKEN åŽé‡è¯•ï¼Œæˆ–æ‰‹åŠ¨æŒ‡å®š SINGBOX_TAG=v1.15.0-alpha.4
-    echo    ä¹Ÿå¯æ‰‹åŠ¨ä¸‹è½½: https://github.com/LMQ00/sing-box/releases
+    echo [X] ´íÎó£ºÎÞ·¨»ñÈ¡°æ±¾ºÅ£¬¿ÉÄÜÊÇÍøÂçÎÊÌâ»ò API ÏÞÁ÷¡£
+    echo    ¿ÉÉèÖÃ GITHUB_TOKEN ºóÖØÊÔ£¬»òÊÖ¶¯Ö¸¶¨ SINGBOX_TAG=v1.15.0-alpha.4
+    echo    Ò²¿ÉÊÖ¶¯ÏÂÔØ: https://github.com/LMQ00/sing-box/releases
     exit /b 1
 )
 
-REM --- éªŒè¯ç‰ˆæœ¬å·æ ¼å¼ï¼ˆç»çŽ¯å¢ƒå˜é‡ä¼ ç»™ PowerShellï¼Œé¿å…å¼•å·/æ³¨å…¥ï¼›findstr åŒé”šç‚¹+é‡å¤ç±»æœ‰ç¼ºé™·ï¼‰ ---
+REM --- ÑéÖ¤°æ±¾ºÅ¸ñÊ½£¨¾­»·¾³±äÁ¿´«¸ø PowerShell£¬±ÜÃâÒýºÅ/×¢Èë£»findstr Ë«Ãªµã+ÖØ¸´ÀàÓÐÈ±ÏÝ£© ---
 set "SBTAG=%TAG%"
 powershell -NoProfile -Command "exit ([int](-not ($env:SBTAG -match '^v[0-9][0-9.a-zA-Z-]*$')))" >nul 2>nul
 if errorlevel 1 (
-    echo âŒ é”™è¯¯ï¼šæ— æ³•èŽ·å–ç‰ˆæœ¬å·ï¼Œå¯èƒ½æ˜¯ç½‘ç»œé—®é¢˜æˆ– API é™æµã€‚
-    echo    è¯·ç¨åŽé‡è¯•æˆ–æ‰‹åŠ¨ä¸‹è½½: https://github.com/LMQ00/sing-box/releases
+    echo [X] ´íÎó£ºÎÞ·¨»ñÈ¡°æ±¾ºÅ£¬¿ÉÄÜÊÇÍøÂçÎÊÌâ»ò API ÏÞÁ÷¡£
+    echo    ÇëÉÔºóÖØÊÔ»òÊÖ¶¯ÏÂÔØ: https://github.com/LMQ00/sing-box/releases
     exit /b 1
 )
 
-echo ðŸ“¦ æœ€æ–°ç‰ˆæœ¬: %TAG%
+echo [*] ×îÐÂ°æ±¾: %TAG%
 
-REM --- æž„å»ºä¸‹è½½æ–‡ä»¶å ---
+REM --- ¹¹½¨ÏÂÔØÎÄ¼þÃû ---
 set "DOWNLOAD_FILE=sing-box-%TAG:~1%-%PLATFORM%.zip"
 set "DOWNLOAD_URL=https://github.com/%GITHUB_REPO%/releases/download/%TAG%/%DOWNLOAD_FILE%"
 
-REM --- åˆ›å»ºä¸´æ—¶ç›®å½• ---
+REM --- ´´½¨ÁÙÊ±Ä¿Â¼ ---
 set "TEMP_DIR=%TEMP%\sing-box-%RANDOM%%RANDOM%"
 if not exist "%TEMP_DIR%" mkdir "%TEMP_DIR%"
 if errorlevel 1 (
-    echo âŒ é”™è¯¯ï¼šæ— æ³•åˆ›å»ºä¸´æ—¶ç›®å½• %TEMP_DIR%
+    echo [X] ´íÎó£ºÎÞ·¨´´½¨ÁÙÊ±Ä¿Â¼ %TEMP_DIR%
     exit /b 1
 )
 
-REM --- å°è¯•ç›´æŽ¥ä¸‹è½½ ---
-echo ðŸ“¥ æ­£åœ¨ä¸‹è½½: %DOWNLOAD_FILE%
+REM --- ³¢ÊÔÖ±½ÓÏÂÔØ ---
+echo [*] ÕýÔÚÏÂÔØ: %DOWNLOAD_FILE%
 set "DL_OK=0"
-curl -fL --connect-timeout 15 --max-time 120 -o "%TEMP_DIR%\%DOWNLOAD_FILE%" "%DOWNLOAD_URL%" 2>nul
+curl -fL --ssl-no-revoke --connect-timeout 15 --max-time 120 -o "%TEMP_DIR%\%DOWNLOAD_FILE%" "%DOWNLOAD_URL%" 2>nul
 if %errorlevel% equ 0 if exist "%TEMP_DIR%\%DOWNLOAD_FILE%" (
     for %%a in ("%TEMP_DIR%\%DOWNLOAD_FILE%") do (
         if %%~za GTR 1000 set "DL_OK=1"
     )
 )
 
-REM --- ç›´æŽ¥ä¸‹è½½å¤±è´¥æ—¶ï¼Œä¾æ¬¡å°è¯•åŠ é€Ÿé“¾æŽ¥ ---
+REM --- Ö±½ÓÏÂÔØÊ§°ÜÊ±£¬ÒÀ´Î³¢ÊÔ¼ÓËÙÁ´½Ó ---
 if "%DL_OK%"=="0" (
-    echo âš ï¸  ç›´æŽ¥ä¸‹è½½å¤±è´¥ï¼Œå°è¯•åŠ é€Ÿé“¾æŽ¥...
+    echo [WARN]  Ö±½ÓÏÂÔØÊ§°Ü£¬³¢ÊÔ¼ÓËÙÁ´½Ó...
     for %%m in (%MIRRORS%) do (
         if "!DL_OK!"=="0" (
-            echo ðŸ”„ å°è¯•åŠ é€Ÿé“¾æŽ¥: %%m
-            curl -fL --connect-timeout 15 --max-time 120 -o "%TEMP_DIR%\%DOWNLOAD_FILE%" "%%m/https://github.com/%GITHUB_REPO%/releases/download/%TAG%/%DOWNLOAD_FILE%" 2>nul
+            echo [*] ³¢ÊÔ¼ÓËÙÁ´½Ó: %%m
+            curl -fL --ssl-no-revoke --connect-timeout 15 --max-time 120 -o "%TEMP_DIR%\%DOWNLOAD_FILE%" "%%m/https://github.com/%GITHUB_REPO%/releases/download/%TAG%/%DOWNLOAD_FILE%" 2>nul
             if !errorlevel! equ 0 if exist "%TEMP_DIR%\%DOWNLOAD_FILE%" (
                 for %%a in ("%TEMP_DIR%\%DOWNLOAD_FILE%") do (
                     if %%~za GTR 1000 set "DL_OK=1"
                 )
             )
-            if "!DL_OK!"=="1" echo âœ… åŠ é€Ÿé“¾æŽ¥ä¸‹è½½æˆåŠŸ: %%m
+            if "!DL_OK!"=="1" echo [OK] ¼ÓËÙÁ´½ÓÏÂÔØ³É¹¦: %%m
         )
     )
 )
 
 if "%DL_OK%"=="0" (
-    echo âŒ é”™è¯¯ï¼šæ‰€æœ‰ä¸‹è½½é“¾æŽ¥å‡å¤±è´¥
+    echo [X] ´íÎó£ºËùÓÐÏÂÔØÁ´½Ó¾ùÊ§°Ü
     rmdir /s /q "%TEMP_DIR%" 2>nul
     exit /b 1
 )
 
-echo ðŸ“¦ æ­£åœ¨è§£åŽ‹...
+echo [*] ÕýÔÚ½âÑ¹...
 
-REM --- è§£åŽ‹ zip æ–‡ä»¶ ---
+REM --- ½âÑ¹ zip ÎÄ¼þ ---
 powershell -NoProfile -ExecutionPolicy Bypass -Command "Expand-Archive -Path '%TEMP_DIR%\%DOWNLOAD_FILE%' -DestinationPath '%TEMP_DIR%\extracted' -Force"
 if %errorlevel% neq 0 (
-    echo âŒ é”™è¯¯ï¼šè§£åŽ‹å¤±è´¥
+    echo [X] ´íÎó£º½âÑ¹Ê§°Ü
     rmdir /s /q "%TEMP_DIR%" 2>nul
     exit /b 1
 )
 
-REM --- æŸ¥æ‰¾è§£åŽ‹åŽçš„ sing-box.exeï¼ˆå–ç¬¬ä¸€ä¸ªåŒ¹é…ï¼‰ ---
+REM --- ²éÕÒ½âÑ¹ºóµÄ sing-box.exe£¨È¡µÚÒ»¸öÆ¥Åä£© ---
 set "FOUND_BINARY="
 for /f "delims=" %%f in ('dir /s /b "%TEMP_DIR%\extracted\sing-box.exe" 2^>nul') do (
     if not defined FOUND_BINARY set "FOUND_BINARY=%%f"
 )
 
 if not defined FOUND_BINARY (
-    echo âŒ é”™è¯¯ï¼šåœ¨åŽ‹ç¼©åŒ…ä¸­æœªæ‰¾åˆ° sing-box.exe
+    echo [X] ´íÎó£ºÔÚÑ¹Ëõ°üÖÐÎ´ÕÒµ½ sing-box.exe
     rmdir /s /q "%TEMP_DIR%" 2>nul
     exit /b 1
 )
 
-REM --- å¤åˆ¶åˆ°ç›®æ ‡ä½ç½® ---
+REM --- ¸´ÖÆµ½Ä¿±êÎ»ÖÃ ---
 copy /y "%FOUND_BINARY%" "%TARGET_BINARY%" > nul
 if %errorlevel% neq 0 (
-    echo âŒ é”™è¯¯ï¼šå®‰è£…å¤±è´¥
+    echo [X] ´íÎó£º°²×°Ê§°Ü
     rmdir /s /q "%TEMP_DIR%" 2>nul
     exit /b 1
 )
 
-REM --- æ¸…ç†ä¸´æ—¶æ–‡ä»¶ ---
+REM --- ÇåÀíÁÙÊ±ÎÄ¼þ ---
 rmdir /s /q "%TEMP_DIR%" 2>nul
 
-echo âœ… sing-box (%PLATFORM%) ä¸‹è½½å¹¶å®‰è£…æˆåŠŸï¼
+echo [OK] sing-box (%PLATFORM%) ÏÂÔØ²¢°²×°³É¹¦£¡
 exit /b 0
 
-REM ===================== å–æœ€æ–°ç‰ˆæœ¬å· =====================
-REM ç”¨ PowerShell å–ã€Œç‰ˆæœ¬å·æœ€é«˜ã€çš„ releaseï¼šä¸».æ¬¡.ä¿®è®¢ > ç¨³å®šä¼˜å…ˆ > é¢„å‘å¸ƒåºå· > æ­£å¼åŒ…ä¼˜å…ˆ
+REM ===================== È¡×îÐÂ°æ±¾ºÅ =====================
+REM ÓÃ PowerShell È¡¡¸°æ±¾ºÅ×î¸ß¡¹µÄ release£ºÖ÷.´Î.ÐÞ¶© > ÎÈ¶¨ÓÅÏÈ > Ô¤·¢²¼ÐòºÅ > ÕýÊ½°üÓÅÏÈ
 :fetch_latest_tag
 set "TAG="
 set "PS_TAG_FILE=%TEMP%\sb-tag-%RANDOM%%RANDOM%.ps1"
@@ -232,13 +232,13 @@ set "PS_TAG_FILE=%TEMP%\sb-tag-%RANDOM%%RANDOM%.ps1"
 >> "%PS_TAG_FILE%" echo   if ($key -gt $bestKey) { $bestKey=$key; $bestTag=$tag }
 >> "%PS_TAG_FILE%" echo }
 >> "%PS_TAG_FILE%" echo Write-Output $bestTag
-for /f "usebackq delims=" %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -File "%PS_TAG_FILE%"') do (
+for /f "delims=" %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -File "%PS_TAG_FILE%"') do (
     if not defined TAG set "TAG=%%i"
 )
 del /f /q "%PS_TAG_FILE%" >nul 2>nul
 exit /b 0
 
-REM ===================== ä¸»èœå• =====================
+REM ===================== Ö÷²Ëµ¥ =====================
 :menu
 echo ==================================
 echo 1. %M1%
@@ -249,7 +249,7 @@ echo 5. %M5%
 echo 6. %M6%
 echo ==================================
 set "choice="
-set /p choice=è¯·é€‰æ‹©æ“ä½œ (1-6):<con
+set /p choice=ÇëÑ¡Ôñ²Ù×÷ (1-6):<con
 if not defined choice goto menu
 set "choice=%choice: =%"
 
@@ -259,42 +259,42 @@ if "%choice%"=="3" goto fix
 if "%choice%"=="4" goto reset
 if "%choice%"=="5" goto update_kernel
 if "%choice%"=="6" exit /b
-echo âŒ æ— æ•ˆé€‰æ‹©ï¼Œè¯·è¾“å…¥ 1-6ã€‚
+echo [X] ÎÞÐ§Ñ¡Ôñ£¬ÇëÊäÈë 1-6¡£
 pause
 goto menu
 
-REM ===================== å¯åŠ¨ sing-box =====================
+REM ===================== Æô¶¯ sing-box =====================
 :start
-echo ðŸš€ æ­£åœ¨å¯åŠ¨ Sing-box æ ¸å¿ƒ...
+echo [*] ÕýÔÚÆô¶¯ Sing-box ºËÐÄ...
 
-REM --- æ£€æµ‹æ˜¯å¦å·²åœ¨è¿è¡Œï¼ˆé¿å…ç«¯å£ 9090 å†²çªï¼‰ ---
+REM --- ¼ì²âÊÇ·ñÒÑÔÚÔËÐÐ£¨±ÜÃâ¶Ë¿Ú 9090 ³åÍ»£© ---
 tasklist /fi "imagename eq sing-box.exe" 2>nul | findstr /i "sing-box.exe" >nul 2>nul
 if not errorlevel 1 (
-    echo â„¹ï¸  sing-box å·²åœ¨è¿è¡Œï¼Œæ— éœ€é‡å¤å¯åŠ¨ã€‚
+    echo [i]  sing-box ÒÑÔÚÔËÐÐ£¬ÎÞÐèÖØ¸´Æô¶¯¡£
     pause
     goto menu
 )
 
-REM --- å ä½ç¬¦æ£€æŸ¥ï¼ˆç”¨ PowerShell åŒ¹é… UTF-8 å†…å®¹ï¼Œfindstr æŒ‰ä»£ç é¡µè§£é‡Šä¼šå¤±æ•ˆï¼‰ ---
+REM --- Õ¼Î»·û¼ì²é£¨ÓÃ PowerShell Æ¥Åä UTF-8 ÄÚÈÝ£¬findstr °´´úÂëÒ³½âÊÍ»áÊ§Ð§£© ---
 powershell -NoProfile -Command "$c=Get-Content '%CONFIG_FILE%' -Raw -Encoding UTF8; if($c.Contains('%PLACEHOLDER%')){exit 0}else{exit 1}" >nul 2>nul
 if errorlevel 1 goto run_singbox
 
-echo ðŸš¨ è­¦å‘Šï¼šé…ç½®æ–‡ä»¶ä¸­æ£€æµ‹åˆ°æœªæ›¿æ¢çš„ '%PLACEHOLDER%'ï¼
-echo    ç¨‹åºå¯èƒ½æ— æ³•æ­£å¸¸è¿è¡Œã€‚
+echo [WARN] ¾¯¸æ£ºÅäÖÃÎÄ¼þÖÐ¼ì²âµ½Î´Ìæ»»µÄ '%PLACEHOLDER%'£¡
+echo    ³ÌÐò¿ÉÄÜÎÞ·¨Õý³£ÔËÐÐ¡£
 set "confirm="
-set /p confirm=ç¡®å®šè¦ç»§ç»­å¯åŠ¨å—ï¼Ÿ(y/N):<con
+set /p confirm=È·¶¨Òª¼ÌÐøÆô¶¯Âð£¿(y/N):<con
 if /i not "%confirm%"=="y" goto menu
 
 :run_singbox
 if not exist "run" mkdir "run"
 
-REM è½®è½¬æ—¥å¿—ï¼šå°†å½“å‰æ—¥å¿—é‡å‘½åä¸ºå¸¦æ—¶é—´æˆ³çš„æ–‡ä»¶
+REM ÂÖ×ªÈÕÖ¾£º½«µ±Ç°ÈÕÖ¾ÖØÃüÃûÎª´øÊ±¼ä´ÁµÄÎÄ¼þ
 if exist "run\sing-box.log" (
     for /f "delims=" %%d in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"') do set "LOG_TS=%%d"
     move /y "run\sing-box.log" "run\sing-box-!LOG_TS!.log" >nul 2>nul
 )
 
-REM æ¸…ç†æ—§æ—¥å¿—ï¼Œåªä¿ç•™æœ€è¿‘ 5 ä¸ª
+REM ÇåÀí¾ÉÈÕÖ¾£¬Ö»±£Áô×î½ü 5 ¸ö
 set COUNT=0
 for /f %%f in ('dir /b /o-n "run\*.log" 2^>nul') do (
     set /a COUNT+=1
@@ -310,14 +310,14 @@ echo   API:      http://127.0.0.1:9090
 echo ==================================
 echo.
 
-REM åŽå°å¯åŠ¨ sing-box
+REM ºóÌ¨Æô¶¯ sing-box
 start "" /B .\sing-box.exe run -c "%CONFIG_FILE%" -D .\ > "run\sing-box.log" 2>&1
 
-REM --- ç­‰å¾…å¹¶æ£€æµ‹è¿›ç¨‹æ˜¯å¦å­˜æ´»ï¼ˆç§’é€€æ—¶ç»™å‡ºæ˜Žç¡®é”™è¯¯ï¼‰ ---
+REM --- µÈ´ý²¢¼ì²â½ø³ÌÊÇ·ñ´æ»î£¨ÃëÍËÊ±¸ø³öÃ÷È·´íÎó£© ---
 timeout /t 2 /nobreak >nul 2>nul
 tasklist /fi "imagename eq sing-box.exe" 2>nul | findstr /i "sing-box.exe" >nul 2>nul
 if errorlevel 1 (
-    echo âŒ é”™è¯¯ï¼šSing-box å¯åŠ¨å¤±è´¥ï¼Œè¯·æŸ¥çœ‹ run\sing-box.logã€‚
+    echo [X] ´íÎó£ºSing-box Æô¶¯Ê§°Ü£¬Çë²é¿´ run\sing-box.log¡£
     pause
     goto menu
 )
@@ -327,63 +327,63 @@ echo Log: run\sing-box.log
 echo Press any key to view log, Ctrl+C to exit.
 
 :watch_log
-REM æŒ‰ä»»æ„é”®æ‰“å¼€æ—¥å¿—
+REM °´ÈÎÒâ¼ü´ò¿ªÈÕÖ¾
 pause >nul
 if exist "run\sing-box.log" (
     type "run\sing-box.log"
 )
 goto watch_log
 
-REM ===================== ä¸‹è½½ Dashboard =====================
+REM ===================== ÏÂÔØ Dashboard =====================
 :download_dashboard
 if exist "%DASHBOARD_DIR%" (
     dir /b "%DASHBOARD_DIR%\*" >nul 2>nul && (
-        echo âœ… Dashboard å·²å­˜åœ¨ï¼Œè·³è¿‡ä¸‹è½½ã€‚
+        echo [OK] Dashboard ÒÑ´æÔÚ£¬Ìø¹ýÏÂÔØ¡£
         exit /b 0
     )
 )
 
-REM --- ç¬¬1æ­¥ï¼šä»Ž config.json æå– external_ui_download_url ---
-REM ç”¨ findstr æå–ï¼ˆé”®åçº¯ ASCIIï¼Œä¸å—ä»£ç é¡µå½±å“ï¼›for /f è‡ªåŠ¨åŽ»æŽ‰è¡Œå°¾ CRï¼‰
+REM --- µÚ1²½£º´Ó config.json ÌáÈ¡ external_ui_download_url ---
+REM ÓÃ findstr ÌáÈ¡£¨¼üÃû´¿ ASCII£¬²»ÊÜ´úÂëÒ³Ó°Ïì£»for /f ×Ô¶¯È¥µôÐÐÎ² CR£©
 set "DASHBOARD_URL="
 for /f "tokens=1* delims=:" %%k in ('findstr /c:"external_ui_download_url" "%CONFIG_FILE%" 2^>nul') do (
     set "DASHBOARD_URL=%%l"
 )
-REM åŽ»æŽ‰ç©ºç™½ã€å¼•å·ä¸Žå¯èƒ½çš„è¡Œå°¾é€—å·
+if not defined DASHBOARD_URL (
+    echo [i]  config.json ÖÐÎ´ÅäÖÃ external_ui_download_url£¬Ìø¹ý Dashboard ÏÂÔØ¡£
+    exit /b 0
+)
+
+REM È¥µô¿Õ°×¡¢ÒýºÅÓë¿ÉÄÜµÄÐÐÎ²¶ººÅ
 set "DASHBOARD_URL=%DASHBOARD_URL: =%"
 set "DASHBOARD_URL=%DASHBOARD_URL:"=%"
 if "%DASHBOARD_URL:~-1%"=="," set "DASHBOARD_URL=%DASHBOARD_URL:~0,-1%"
 
-if not defined DASHBOARD_URL (
-    echo â„¹ï¸  config.json ä¸­æœªé…ç½® external_ui_download_urlï¼Œè·³è¿‡ Dashboard ä¸‹è½½ã€‚
-    exit /b 0
-)
-
-echo ðŸ“¥ æ­£åœ¨ä¸‹è½½ Dashboard...
+echo [*] ÕýÔÚÏÂÔØ Dashboard...
 
 set "TEMP_DIR=%TEMP%\dashboard-%RANDOM%%RANDOM%"
 if not exist "%TEMP_DIR%" mkdir "%TEMP_DIR%"
 if errorlevel 1 (
-    echo âš ï¸  æ— æ³•åˆ›å»ºä¸´æ—¶ç›®å½• %TEMP_DIR%ï¼Œè·³è¿‡ Dashboard ä¸‹è½½ã€‚
+    echo [WARN]  ÎÞ·¨´´½¨ÁÙÊ±Ä¿Â¼ %TEMP_DIR%£¬Ìø¹ý Dashboard ÏÂÔØ¡£
     exit /b 0
 )
 set "ZIP_FILE=%TEMP_DIR%\dashboard.zip"
 
-REM --- ç¬¬2æ­¥ï¼šç›´è¿žä¸‹è½½ + åŠ é€Ÿé“¾æŽ¥è´Ÿè½½å‡è¡¡ ---
+REM --- µÚ2²½£ºÖ±Á¬ÏÂÔØ + ¼ÓËÙÁ´½Ó¸ºÔØ¾ùºâ ---
 set "DL_OK=0"
-echo ðŸ“¥ å°è¯•ç›´è¿ž...
-curl -fL --connect-timeout 15 --max-time 120 -o "%ZIP_FILE%" "%DASHBOARD_URL%" 2>nul
+echo [*] ³¢ÊÔÖ±Á¬...
+curl -fL --ssl-no-revoke --connect-timeout 15 --max-time 120 -o "%ZIP_FILE%" "%DASHBOARD_URL%" 2>nul
 if %errorlevel% equ 0 if exist "%ZIP_FILE%" (
     for %%a in ("%ZIP_FILE%") do if %%~za GTR 1000 set "DL_OK=1"
 )
 
-REM å¦‚æžœç›´è¿žå¤±è´¥ä¸”æ˜¯ GitHub åœ°å€ï¼Œä¾æ¬¡å°è¯•åŠ é€Ÿé“¾æŽ¥
+REM Èç¹ûÖ±Á¬Ê§°ÜÇÒÊÇ GitHub µØÖ·£¬ÒÀ´Î³¢ÊÔ¼ÓËÙÁ´½Ó
 if "!DL_OK!"=="0" (
     echo %DASHBOARD_URL% | findstr "github.com" >nul
     if not errorlevel 1 (
-        echo âš ï¸  ç›´è¿žå¤±è´¥ï¼Œå°è¯•åŠ é€Ÿé“¾æŽ¥...
+        echo [WARN]  Ö±Á¬Ê§°Ü£¬³¢ÊÔ¼ÓËÙÁ´½Ó...
 
-        REM å‰¥ç¦»å·²çŸ¥é•œåƒå‰ç¼€ï¼ŒèŽ·å–åŽŸå§‹ GitHub URL
+        REM °þÀëÒÑÖª¾µÏñÇ°×º£¬»ñÈ¡Ô­Ê¼ GitHub URL
         set "RAW_URL=%DASHBOARD_URL%"
         for %%m in (%MIRRORS%) do (
             set "TMP_URL=!RAW_URL:%%m/=!"
@@ -392,72 +392,72 @@ if "!DL_OK!"=="0" (
 
         for %%m in (%MIRRORS%) do (
             if "!DL_OK!"=="0" (
-                echo ðŸ”„ å°è¯•åŠ é€Ÿé“¾æŽ¥: %%m
-                curl -fL --connect-timeout 15 --max-time 120 -o "!ZIP_FILE!" "%%m/!RAW_URL!" 2>nul
+                echo [*] ³¢ÊÔ¼ÓËÙÁ´½Ó: %%m
+                curl -fL --ssl-no-revoke --connect-timeout 15 --max-time 120 -o "!ZIP_FILE!" "%%m/!RAW_URL!" 2>nul
                 if !errorlevel! equ 0 if exist "!ZIP_FILE!" (
                     for %%a in ("!ZIP_FILE!") do if %%~za GTR 1000 set "DL_OK=1"
                 )
-                if "!DL_OK!"=="1" echo âœ… åŠ é€Ÿé“¾æŽ¥ä¸‹è½½æˆåŠŸ: %%m
+                if "!DL_OK!"=="1" echo [OK] ¼ÓËÙÁ´½ÓÏÂÔØ³É¹¦: %%m
             )
         )
     )
 )
 
 if "%DL_OK%"=="0" (
-    echo âš ï¸  Dashboard æ‰€æœ‰ä¸‹è½½é“¾æŽ¥å‡å¤±è´¥ï¼Œè·³è¿‡ã€‚
+    echo [WARN]  Dashboard ËùÓÐÏÂÔØÁ´½Ó¾ùÊ§°Ü£¬Ìø¹ý¡£
     rmdir /s /q "%TEMP_DIR%" 2>nul
     exit /b 0
 )
 
-echo ðŸ“¦ æ­£åœ¨è§£åŽ‹ Dashboard...
+echo [*] ÕýÔÚ½âÑ¹ Dashboard...
 
-REM --- ç¬¬3æ­¥ï¼šè§£åŽ‹åˆ° dashboard ç›®å½• ---
+REM --- µÚ3²½£º½âÑ¹µ½ dashboard Ä¿Â¼ ---
 mkdir "%DASHBOARD_DIR%" 2>nul
-powershell -NoProfile -ExecutionPolicy Bypass -Command "try{$e='%TEMP_DIR%\extracted';Expand-Archive -Path '%ZIP_FILE%' -DestinationPath $e -Force;$i=Get-ChildItem $e;if($i.Count-eq1-and$i[0].PSIsContainer){$s=$i[0].FullName;Get-ChildItem $s|Copy-Item -Destination '%DASHBOARD_DIR%' -Recurse -Force}else{Get-ChildItem $e|Copy-Item -Destination '%DASHBOARD_DIR%' -Recurse -Force};Write-Host 'âœ… Dashboard éƒ¨ç½²å®Œæˆï¼è·¯å¾„: %DASHBOARD_DIR%'}catch{exit 1}"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "try{$e='%TEMP_DIR%\extracted';Expand-Archive -Path '%ZIP_FILE%' -DestinationPath $e -Force;$i=Get-ChildItem $e;if($i.Count-eq1-and$i[0].PSIsContainer){$s=$i[0].FullName;Get-ChildItem $s|Copy-Item -Destination '%DASHBOARD_DIR%' -Recurse -Force}else{Get-ChildItem $e|Copy-Item -Destination '%DASHBOARD_DIR%' -Recurse -Force};Write-Host '[OK] Dashboard ²¿ÊðÍê³É£¡Â·¾¶: %DASHBOARD_DIR%'}catch{exit 1}"
 
 if %errorlevel% neq 0 (
-    echo âš ï¸  Dashboard è§£åŽ‹å¤±è´¥ï¼Œè·³è¿‡ã€‚
+    echo [WARN]  Dashboard ½âÑ¹Ê§°Ü£¬Ìø¹ý¡£
 )
 
 rmdir /s /q "%TEMP_DIR%" 2>nul
 exit /b 0
 
-REM ===================== æ›´æ–°è®¢é˜…é“¾æŽ¥ =====================
+REM ===================== ¸üÐÂ¶©ÔÄÁ´½Ó =====================
 :update
-echo ðŸ“ æ›´æ–°è®¢é˜…é“¾æŽ¥
-echo ðŸ’¡ æç¤ºï¼šå¦‚æžœåªè¾“å…¥ä¸€ä¸ªé“¾æŽ¥ï¼Œå®ƒå°†è¢«å¤åˆ¶åˆ°æ‰€æœ‰ä¸‰ä¸ªä½ç½®ã€‚
+echo [*] ¸üÐÂ¶©ÔÄÁ´½Ó
+echo [i] ÌáÊ¾£ºÈç¹ûÖ»ÊäÈëÒ»¸öÁ´½Ó£¬Ëü½«±»¸´ÖÆµ½ËùÓÐÈý¸öÎ»ÖÃ¡£
 
-REM --- ä½¿ç”¨ PowerShell å®‰å…¨æ›´æ–°ï¼ˆRead-Host é˜²æ³¨å…¥ï¼›æ— å ä½ç¬¦æ—¶ä¸æ”¹åŠ¨å¹¶æç¤ºï¼‰ ---
+REM --- Ê¹ÓÃ PowerShell °²È«¸üÐÂ£¨Read-Host ·À×¢Èë£»ÎÞÕ¼Î»·ûÊ±²»¸Ä¶¯²¢ÌáÊ¾£© ---
 powershell -NoProfile -ExecutionPolicy Bypass -NoLogo -Command ^
     "$ph='%PLACEHOLDER%'; $cfg='%CONFIG_FILE%';" ^
     "$c=Get-Content $cfg -Raw -Encoding UTF8;" ^
-    "if(-not $c.Contains($ph)){Write-Host 'âš ï¸ é…ç½®æ–‡ä»¶ä¸­æœªæ‰¾åˆ°å ä½ç¬¦ï¼ˆå¯èƒ½å·²é…ç½®è¿‡è®¢é˜…ï¼‰ï¼Œæœªåšä¿®æ”¹ã€‚'; exit 0};" ^
-    "$u1=Read-Host 'è¯·è¾“å…¥ è®¢é˜…1 é“¾æŽ¥';" ^
-    "if([string]::IsNullOrWhiteSpace($u1)){Write-Host 'âŒ é”™è¯¯ï¼šä½ æ²¡æœ‰è¾“å…¥ä»»ä½•é“¾æŽ¥ï¼'; exit 1};" ^
-    "$u2=Read-Host 'è¯·è¾“å…¥ è®¢é˜…2 é“¾æŽ¥ (å¯ç•™ç©º)';" ^
-    "$u3=Read-Host 'è¯·è¾“å…¥ è®¢é˜…3 é“¾æŽ¥ (å¯ç•™ç©º)';" ^
+    "if(-not $c.Contains($ph)){Write-Host '[WARN] ÅäÖÃÎÄ¼þÖÐÎ´ÕÒµ½Õ¼Î»·û£¨¿ÉÄÜÒÑÅäÖÃ¹ý¶©ÔÄ£©£¬Î´×öÐÞ¸Ä¡£'; exit 0};" ^
+    "$u1=Read-Host 'ÇëÊäÈë ¶©ÔÄ1 Á´½Ó';" ^
+    "if([string]::IsNullOrWhiteSpace($u1)){Write-Host '[X] ´íÎó£ºÄãÃ»ÓÐÊäÈëÈÎºÎÁ´½Ó£¡'; exit 1};" ^
+    "$u2=Read-Host 'ÇëÊäÈë ¶©ÔÄ2 Á´½Ó (¿ÉÁô¿Õ)';" ^
+    "$u3=Read-Host 'ÇëÊäÈë ¶©ÔÄ3 Á´½Ó (¿ÉÁô¿Õ)';" ^
     "if([string]::IsNullOrWhiteSpace($u2)){$u2=$u1};" ^
     "if([string]::IsNullOrWhiteSpace($u3)){$u3=$u1};" ^
     "$bak=$cfg+'.backup_'+ (Get-Date -Format 'yyyyMMdd_HHmmss');" ^
     "Copy-Item $cfg $bak -Force -ErrorAction Stop;" ^
-    "Write-Host ('ðŸ“„ å·²å¤‡ä»½åŽŸé…ç½®æ–‡ä»¶ â†’ '+$bak);" ^
+    "Write-Host ('[*] ÒÑ±¸·ÝÔ­ÅäÖÃÎÄ¼þ ¡ú '+$bak);" ^
     "foreach($u in @($u1,$u2,$u3)){" ^
     "  $i=$c.IndexOf($ph); if($i-lt 0){break};" ^
     "  $c=$c.Substring(0,$i)+$u+$c.Substring($i+$ph.Length)" ^
     "};" ^
     "[IO.File]::WriteAllText($cfg, $c, (New-Object System.Text.UTF8Encoding $false));" ^
     "$left=([regex]::Matches($c,[regex]::Escape($ph))).Count;" ^
-    "if($left-gt 0){Write-Host ('âš ï¸ ä»æœ‰ {0} ä¸ªå ä½ç¬¦æœªæ›¿æ¢ï¼ˆè®¢é˜…æ•°é‡å°‘äºŽ 3 æ—¶æ­£å¸¸ï¼‰ã€‚' -f $left)};" ^
+    "if($left-gt 0){Write-Host ('[WARN] ÈÔÓÐ {0} ¸öÕ¼Î»·ûÎ´Ìæ»»£¨¶©ÔÄÊýÁ¿ÉÙÓÚ 3 Ê±Õý³££©¡£' -f $left)};" ^
     "Write-Host '';" ^
-    "Write-Host 'âœ… æˆåŠŸï¼é…ç½®æ–‡ä»¶å·²æ›´æ–°ã€‚';" ^
+    "Write-Host '[OK] ³É¹¦£¡ÅäÖÃÎÄ¼þÒÑ¸üÐÂ¡£';" ^
     "foreach($i in 0..2){" ^
     "  $v=@($u1,$u2,$u3)[$i];" ^
     "  if($v.Length-gt 20){$v=$v.Substring(0,20)+'...'};" ^
-    "  Write-Host ('   è®¢é˜…{0}: {1}' -f ($i+1),$v)" ^
+    "  Write-Host ('   ¶©ÔÄ{0}: {1}' -f ($i+1),$v)" ^
     "}"
 
 if %errorlevel% neq 0 (
-    echo âŒ æ›´æ–°å¤±è´¥ï¼ˆæœªè¾“å…¥é“¾æŽ¥æˆ– PowerShell å¼‚å¸¸ï¼‰ï¼
+    echo [X] ¸üÐÂÊ§°Ü£¨Î´ÊäÈëÁ´½Ó»ò PowerShell Òì³££©£¡
     pause
     goto menu
 )
@@ -465,91 +465,91 @@ if %errorlevel% neq 0 (
 pause
 goto menu
 
-REM ===================== è‡ªåŠ¨ä¿®å¤ï¼šæ¸…é™¤ç¼“å­˜ =====================
+REM ===================== ×Ô¶¯ÐÞ¸´£ºÇå³ý»º´æ =====================
 :fix
-echo ðŸ”§ è‡ªåŠ¨ä¿®å¤ï¼šæ¸…é™¤ç¼“å­˜æ–‡ä»¶...
+echo [*] ×Ô¶¯ÐÞ¸´£ºÇå³ý»º´æÎÄ¼þ...
 
 if exist "cache.db" (
     del /f /q "cache.db" 2>nul
-    echo    âœ… å·²åˆ é™¤ cache.db
+    echo    [OK] ÒÑÉ¾³ý cache.db
 ) else (
-    echo    â„¹ï¸  cache.db ä¸å­˜åœ¨ï¼Œè·³è¿‡
+    echo    [i]  cache.db ²»´æÔÚ£¬Ìø¹ý
 )
 
 if exist "run" (
     rmdir /s /q "run" 2>nul
-    echo    âœ… å·²åˆ é™¤ run ç›®å½•
+    echo    [OK] ÒÑÉ¾³ý run Ä¿Â¼
 ) else (
-    echo    â„¹ï¸  run ç›®å½•ä¸å­˜åœ¨ï¼Œè·³è¿‡
+    echo    [i]  run Ä¿Â¼²»´æÔÚ£¬Ìø¹ý
 )
 
-echo âœ… ç¼“å­˜æ¸…ç†å®Œæˆï¼
+echo [OK] »º´æÇåÀíÍê³É£¡
 pause
 goto menu
 
-REM ===================== æ›´æ–°å†…æ ¸ =====================
+REM ===================== ¸üÐÂÄÚºË =====================
 :update_kernel
-echo ðŸ”„ æ­£åœ¨æ›´æ–° sing-box æ ¸å¿ƒ...
+echo [*] ÕýÔÚ¸üÐÂ sing-box ºËÐÄ...
 
-REM --- æ£€æµ‹æ˜¯å¦åœ¨è¿è¡Œï¼ˆæ–‡ä»¶è¢«å ç”¨æ—¶å¤‡ä»½/æ›¿æ¢ä¼šå¤±è´¥ï¼‰ ---
+REM --- ¼ì²âÊÇ·ñÔÚÔËÐÐ£¨ÎÄ¼þ±»Õ¼ÓÃÊ±±¸·Ý/Ìæ»»»áÊ§°Ü£© ---
 tasklist /fi "imagename eq sing-box.exe" 2>nul | findstr /i "sing-box.exe" >nul 2>nul
 if not errorlevel 1 (
-    echo âš ï¸  sing-box æ­£åœ¨è¿è¡Œï¼Œè¯·å…ˆåœæ­¢ï¼ˆç»“æŸ sing-box.exe è¿›ç¨‹ï¼‰å†æ›´æ–°å†…æ ¸ã€‚
+    echo [WARN]  sing-box ÕýÔÚÔËÐÐ£¬ÇëÏÈÍ£Ö¹£¨½áÊø sing-box.exe ½ø³Ì£©ÔÙ¸üÐÂÄÚºË¡£
     pause
     goto menu
 )
 
-REM --- å¤‡ä»½çŽ°æœ‰äºŒè¿›åˆ¶æ–‡ä»¶ï¼ˆæ‹¬å·å—å†… %var% æ˜¯è§£æžæœŸå±•å¼€ï¼Œé¡»ç”¨ !var!ï¼‰ ---
+REM --- ±¸·ÝÏÖÓÐ¶þ½øÖÆÎÄ¼þ£¨À¨ºÅ¿éÄÚ %var% ÊÇ½âÎöÆÚÕ¹¿ª£¬ÐëÓÃ !var!£© ---
 if exist "%TARGET_BINARY%" (
     for /f "delims=" %%d in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"') do set "BACKUP_TS=%%d"
     copy /y "%TARGET_BINARY%" "%TARGET_BINARY%.backup_!BACKUP_TS!" >nul 2>nul
     if errorlevel 1 (
-        echo âŒ å¤‡ä»½å¤±è´¥ï¼ˆæ–‡ä»¶å¯èƒ½è¢«å ç”¨ï¼‰ï¼Œå·²ä¸­æ­¢æ›´æ–°ã€‚
+        echo [X] ±¸·ÝÊ§°Ü£¨ÎÄ¼þ¿ÉÄÜ±»Õ¼ÓÃ£©£¬ÒÑÖÐÖ¹¸üÐÂ¡£
         pause
         goto menu
     )
-    echo ðŸ“„ å·²å¤‡ä»½åŽŸæ ¸å¿ƒ â†’ %TARGET_BINARY%.backup_!BACKUP_TS!
+    echo [*] ÒÑ±¸·ÝÔ­ºËÐÄ ¡ú %TARGET_BINARY%.backup_!BACKUP_TS!
 )
 
-REM --- è°ƒç”¨ä¸‹è½½å­ç¨‹åº ---
+REM --- µ÷ÓÃÏÂÔØ×Ó³ÌÐò ---
 call :download_singbox
 if errorlevel 1 (
-    echo âŒ æ ¸å¿ƒæ›´æ–°å¤±è´¥
+    echo [X] ºËÐÄ¸üÐÂÊ§°Ü
     pause
     goto menu
 )
 
-echo âœ… æ ¸å¿ƒæ›´æ–°å®Œæˆï¼
+echo [OK] ºËÐÄ¸üÐÂÍê³É£¡
 pause
 goto menu
 
-REM ===================== é‡ç½®é…ç½®ï¼šä»Žå¤‡ä»½æ¢å¤ =====================
+REM ===================== ÖØÖÃÅäÖÃ£º´Ó±¸·Ý»Ö¸´ =====================
 :reset
-echo ðŸ”„ é‡ç½®é…ç½®ï¼šä»Žå¤‡ä»½æ¢å¤...
+echo [*] ÖØÖÃÅäÖÃ£º´Ó±¸·Ý»Ö¸´...
 
-REM æŸ¥æ‰¾æœ€æ–°çš„å¤‡ä»½æ–‡ä»¶
+REM ²éÕÒ×îÐÂµÄ±¸·ÝÎÄ¼þ
 set "LATEST_BACKUP="
 for /f "delims=" %%f in ('dir /b /o-n "%CONFIG_FILE%.backup_*" 2^>nul') do (
     if not defined LATEST_BACKUP set "LATEST_BACKUP=%%f"
 )
 
 if not defined LATEST_BACKUP (
-    echo âŒ é”™è¯¯ï¼šæœªæ‰¾åˆ°ä»»ä½•å¤‡ä»½æ–‡ä»¶ï¼
-    echo    å¤‡ä»½æ–‡ä»¶æ ¼å¼ï¼šconfig.json.backup_YYYYMMDD_HHMMSS
+    echo [X] ´íÎó£ºÎ´ÕÒµ½ÈÎºÎ±¸·ÝÎÄ¼þ£¡
+    echo    ±¸·ÝÎÄ¼þ¸ñÊ½£ºconfig.json.backup_YYYYMMDD_HHMMSS
     pause
     goto menu
 )
 
-echo    æ‰¾åˆ°æœ€æ–°å¤‡ä»½: %LATEST_BACKUP%
+echo    ÕÒµ½×îÐÂ±¸·Ý: %LATEST_BACKUP%
 set "confirm="
-set /p confirm=ç¡®å®šè¦æ¢å¤æ­¤å¤‡ä»½å—ï¼Ÿ(y/N):<con
+set /p confirm=È·¶¨Òª»Ö¸´´Ë±¸·ÝÂð£¿(y/N):<con
 if /i not "%confirm%"=="y" goto menu
 
 copy /y "%LATEST_BACKUP%" "%CONFIG_FILE%" >nul 2>nul
 if %errorlevel% equ 0 (
-    echo âœ… é…ç½®å·²æ¢å¤è‡ª %LATEST_BACKUP%
+    echo [OK] ÅäÖÃÒÑ»Ö¸´×Ô %LATEST_BACKUP%
 ) else (
-    echo âŒ æ¢å¤å¤±è´¥ï¼
+    echo [X] »Ö¸´Ê§°Ü£¡
 )
 
 pause
