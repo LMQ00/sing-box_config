@@ -82,6 +82,7 @@
           "mmbiz",
           "gtimg.com",
           "opencode",
+          "r4.codes",
           "flow.mxzu.net"
         ],
         "server": "alidns"
@@ -99,14 +100,12 @@
       }
     ],
     "final": "google",
-    "strategy": "ipv4_only",
     "disable_cache": true
   },
   "inbounds": [
     {
       "type": "tun",
       "tag": "tun-in",
-      "stack": "system",
       "address": [
         "172.18.0.1/30",
         "fdfe:dcba:9876::1/126"
@@ -299,7 +298,7 @@
       "url": "订阅链接",
       "user_agent": "NekoBox/1.0",
       "update_interval": "2h0m0s",
-      "download_detour": "direct",
+//      "download_detour": "direct",
       "health_check": {
         "enabled": true,
         "url": "https://www.gstatic.com/generate_204"
@@ -311,7 +310,7 @@
       "url": "订阅链接",
       "user_agent": "NekoBox/1.0",
       "update_interval": "2h0m0s",
-      "download_detour": "direct",
+//      "download_detour": "direct",
       "health_check": {
         "enabled": true,
         "url": "https://www.gstatic.com/generate_204"
@@ -323,20 +322,28 @@
       "url": "订阅链接",
       "user_agent": "NekoBox/1.0",
       "update_interval": "2h0m0s",
-      "download_detour": "direct",
+//      "download_detour": "direct",
       "health_check": {
         "enabled": true,
         "url": "https://www.gstatic.com/generate_204"
       }
     }
   ],
+  "http_clients": [
+    {
+      "tag": "h2",
+      "engine": "go",
+      "version": 2,
+      "disable_version_fallback": false
+    }
+  ],
   "route": {
     "rules": [
-      {
-        "ip_version": 6,
-        "action": "reject",
-        "no_drop": true
-      },
+//      {
+//        "ip_version": 6,
+//        "action": "reject",
+//        "no_drop": true
+//      },
       {
 		"ip_is_private": true,
 		"action": "route",
@@ -362,6 +369,11 @@
       {
         "clash_mode": "全局代理",
         "outbound": "国外代理"
+      },
+      {
+       "action": "sniff",
+       "sniffer": [ "http", "tls", "quic" ],
+       "timeout": "100ms"
       },
       {
         "rule_set": [
@@ -437,6 +449,7 @@
           "mmbiz",
           "gtimg.com",
           "opencode",
+          "r4.codes",
           "flow.mxzu.net"
         ],
         "outbound": "国内代理"
@@ -452,11 +465,11 @@
         ],
         "outbound": "国内代理"
       },
-      {
-        "action": "resolve",
+//      {
+//        "action": "resolve",
 //        "server": "alidns",
-        "disable_cache": true
-      },
+//        "disable_cache": true
+//      },
       {
         "rule_set": [
           "CN-ip"
@@ -519,6 +532,7 @@
       }
     ],
     "final": "国外代理",
+    "default_http_client": "h2",
     "auto_detect_interface": true,
     "default_domain_resolver": {
       "server": "alidns"
