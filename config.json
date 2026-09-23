@@ -371,8 +371,59 @@
         "outbound": "国外代理"
       },
       {
+        "type": "logical",
+        "mode": "and",
+        "rules": [
+          {
+            "network": "udp"
+          },
+          {
+            "port": [
+              443,
+              1900,
+              3478,
+              3479,
+              5349,
+              5351
+            ]
+          },
+          {
+            "clash_mode": "严格模式"
+          }
+        ],
+        "action": "reject",
+        "no_drop": true
+      },
+      {
+        "type": "logical",
+        "mode": "and",
+        "rules": [
+          {
+            "network": "udp"
+          },
+          {
+            "port_range": [
+              "19302:19309"
+            ]
+          },
+          {
+            "clash_mode": "严格模式"
+          }
+        ],
+        "action": "reject",
+        "no_drop": true
+      },
+      {
+        "rule_set": [
+          "tg_bad"
+        ],
+        "outbound": "国外代理",
+        "action": "route-options",
+        "override_address": "91.108.56.147"
+      },
+      {
        "action": "sniff",
-       "sniffer": [ "http", "tls", "quic" ],
+       "sniffer": [ "http", "tls", "quic", "stun", "dtls" ],
        "timeout": "100ms"
       },
       {
@@ -396,30 +447,12 @@
           "dtls",
           "p2p",
           "mcdn",
-          "tracker"
+          "tracker",
+          "coturn",
+          "turnserver",
+          "webrtc"
         ],
         "clash_mode": "严格模式",
-        "action": "reject",
-        "no_drop": true
-      },
-      {
-        "type": "logical",
-        "mode": "and",
-        "rules": [
-          {
-            "network": "udp"
-          },
-          {
-            "port": [
-              443,
-              3478,
-              5349
-            ]
-          },
-          {
-            "clash_mode": "严格模式"
-          }
-        ],
         "action": "reject",
         "no_drop": true
       },
@@ -475,14 +508,6 @@
           "CN-ip"
         ],
         "outbound": "国内代理"
-      },
-      {
-        "rule_set": [
-          "tg_bad"
-        ],
-        "outbound": "国外代理",
-        "action": "route-options",
-        "override_address": "91.108.56.147"
       },
       {
         "clash_mode": "规则模式",
