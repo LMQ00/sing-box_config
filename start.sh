@@ -19,6 +19,7 @@ readonly DASHBOARD_DIR="./dashboard"
 readonly MAX_LOGS=5
 readonly GITHUB_REPO="LMQ00/sing-box"
 readonly GITHUB_API="https://api.github.com/repos/$GITHUB_REPO/releases/latest"
+readonly GITHUB_RELEASES_API="https://api.github.com/repos/$GITHUB_REPO/releases?per_page=30"
 TEMP_DIRS=()
 
 # --- 信号处理：优雅退出 ---
@@ -295,17 +296,58 @@ download_and_validate() {
     return 1
 }
 
+# 获取要下载的 tag：默认取「版本号最高」的 release（含 alpha/beta/rc 预发布），
+# 因为上游预发布版本不会标记为 latest（/releases/latest 只会返回稳定版）。
+# 可用 SINGBOX_TAG 环境变量手动指定，例如：SINGBOX_TAG=v1.15.0-alpha.4 ./start.sh
+fetch_latest_tag() {
+    if [[ -n "${SINGBOX_TAG:-}" ]]; then
+        printf '%s' "$SINGBOX_TAG"
+        return 0
+    fi
+
+    local curl_args=(-s --connect-timeout 15 --max-time 30)
+    [[ -n "${GITHUB_TOKEN:-}" ]] && curl_args+=(-H "Authorization: Bearer $GITHUB_TOKEN")
+
+    local json tags
+    json=$(curl "${curl_args[@]}" "$GITHUB_RELEASES_API")
+    # 压成单行后按对象切分，跳过 draft；再按 主.次.修订|稳定优先|预发布序号|正式包优先 排序取最大
+    tags=$(printf '%s' "$json" | tr -d '\r\n' | tr '{' '\n' | awk '
+        /"tag_name"/ && !/"draft"[[:space:]]*:[[:space:]]*true/ {
+            if (match($0, /"tag_name"[[:space:]]*:[[:space:]]*"[^"]*"/)) {
+                s = substr($0, RSTART, RLENGTH)
+                sub(/.*"[[:space:]]*:[[:space:]]*"/, "", s)
+                sub(/"$/, "", s)
+                if (s != "") print s
+            }
+        }' | awk -F- '{
+        v = $1; sub(/^v/, "", v)
+        n = split(v, a, ".")
+        pre = (NF > 1) ? 1 : 0
+        prenum = 0
+        if (NF > 1) { m = split($2, p, "."); if (m > 1) prenum = p[2] + 0 }
+        plain = ($0 ~ /-reF1nd/) ? 0 : 1
+        printf "%03d.%03d.%03d|%d|%06d|%d|%s\n", a[1], a[2], a[3], 1 - pre, prenum, plain, $0
+    }' | sort -r | head -1 | cut -d'|' -f5)
+
+    if [[ -z "$tags" ]]; then
+        # 回退：接口限流或解析失败时，退回官方 latest（仅稳定版）
+        tags=$(curl "${curl_args[@]}" "$GITHUB_API" | grep -o '"tag_name": "[^"]*"' | head -1 | cut -d'"' -f4)
+    fi
+
+    printf '%s' "$tags"
+}
+
 download_latest_version() {
     local platform="$1"
 
     echo "🔍 正在从 GitHub 获取最新版本信息..."
 
-    # 获取最新版本的 tag
+    # 获取最新版本的 tag（含预发布）
     local latest_tag
-    latest_tag=$(curl -s --connect-timeout 15 --max-time 30 "$GITHUB_API" | grep -o '"tag_name": "[^"]*"' | head -1 | cut -d'"' -f4)
+    latest_tag=$(fetch_latest_tag)
 
     if [[ -z "$latest_tag" ]]; then
-        echo "❌ 错误：无法获取最新版本信息"
+        echo "❌ 错误：无法获取最新版本信息（GitHub API 限流时可设置 GITHUB_TOKEN，或手动指定 SINGBOX_TAG=v1.15.0-alpha.4）"
         return 1
     fi
 

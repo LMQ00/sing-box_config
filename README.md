@@ -33,6 +33,8 @@ cd sing-box_config
 
 > 如需更新内核：直接运行脚本并选择 **选项 5（Update Core）**；或删除根目录下的 `sing-box` (Linux/macOS) / `sing-box.exe` (Windows) 文件后重新运行脚本。
 
+> 内核版本选择：脚本取 releases 中**版本号最高**的 tag（含 alpha / beta / rc 预发布，因为上游预发布版本不会标记为 latest，`/releases/latest` 只会返回稳定版）。可用 `SINGBOX_TAG=v1.15.0-alpha.4` 手动指定版本；若遇到 GitHub API 限流，可设置 `GITHUB_TOKEN` 提高限额。
+
 **内核信息：**
 
 | 项目 | 地址 |

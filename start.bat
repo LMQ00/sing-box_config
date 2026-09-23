@@ -18,6 +18,7 @@ set PLACEHOLDER=订阅链接
 set TARGET_BINARY=sing-box.exe
 set GITHUB_REPO=LMQ00/sing-box
 set GITHUB_API=https://api.github.com/repos/%GITHUB_REPO%/releases/latest
+set GITHUB_RELEASES_API=https://api.github.com/repos/%GITHUB_REPO%/releases?per_page=30
 set DASHBOARD_DIR=.\dashboard
 set M1=启动 sing-box 核心
 set M2=更新订阅链接
@@ -94,17 +95,19 @@ REM ===================== 下载 sing-box 核心 =====================
 :download_singbox
 echo 📥 正在从 GitHub 下载最新版本...
 
-REM --- 获取最新版本号 ---
-for /f "tokens=2 delims=:" %%i in ('curl -s "%GITHUB_API%" ^| findstr "tag_name"') do (
-    set "RAW_TAG=%%i"
+REM --- 获取最新版本号（取「版本号最高」的 release，含 alpha/beta/rc 预发布） ---
+REM     上游预发布不会标记为 latest，/releases/latest 只会返回稳定版。
+REM     可设置 GITHUB_TOKEN 提高 API 限额，或用 SINGBOX_TAG 手动指定版本。
+if defined SINGBOX_TAG (
+    set "TAG=%SINGBOX_TAG%"
+) else (
+    call :fetch_latest_tag
 )
-set "TAG=%RAW_TAG: =%"
-set "TAG=%TAG:"=%"
-set "TAG=%TAG:~0,-1%"
 
 if not defined TAG (
     echo ❌ 错误：无法获取版本号，可能是网络问题或 API 限流。
-    echo    请稍后重试或手动下载: https://github.com/LMQ00/sing-box/releases
+    echo    可设置 GITHUB_TOKEN 后重试，或手动指定 SINGBOX_TAG=v1.15.0-alpha.4
+    echo    也可手动下载: https://github.com/LMQ00/sing-box/releases
     exit /b 1
 )
 
@@ -198,6 +201,41 @@ REM --- 清理临时文件 ---
 rmdir /s /q "%TEMP_DIR%" 2>nul
 
 echo ✅ sing-box (%PLATFORM%) 下载并安装成功！
+exit /b 0
+
+REM ===================== 取最新版本号 =====================
+REM 用 PowerShell 取「版本号最高」的 release：主.次.修订 > 稳定优先 > 预发布序号 > 正式包优先
+:fetch_latest_tag
+set "TAG="
+set "PS_TAG_FILE=%TEMP%\sb-tag-%RANDOM%%RANDOM%.ps1"
+> "%PS_TAG_FILE%" echo $ProgressPreference='SilentlyContinue'
+>> "%PS_TAG_FILE%" echo [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
+>> "%PS_TAG_FILE%" echo $headers=@{}
+>> "%PS_TAG_FILE%" echo if ($env:GITHUB_TOKEN) { $headers['Authorization']='Bearer '+$env:GITHUB_TOKEN }
+>> "%PS_TAG_FILE%" echo try { $releases=Invoke-RestMethod -Headers $headers -Uri '%GITHUB_RELEASES_API%' -TimeoutSec 30 } catch { exit 1 }
+>> "%PS_TAG_FILE%" echo $bestTag=''
+>> "%PS_TAG_FILE%" echo $bestKey=''
+>> "%PS_TAG_FILE%" echo foreach ($release in $releases) {
+>> "%PS_TAG_FILE%" echo   if ($release.draft) { continue }
+>> "%PS_TAG_FILE%" echo   $tag=$release.tag_name
+>> "%PS_TAG_FILE%" echo   if ($tag -notmatch '^^v[0-9]') { continue }
+>> "%PS_TAG_FILE%" echo   $ver=$tag.TrimStart('v')
+>> "%PS_TAG_FILE%" echo   $parts=$ver -split '-',2
+>> "%PS_TAG_FILE%" echo   $nums=@($parts[0] -split '\.')
+>> "%PS_TAG_FILE%" echo   while ($nums.Count -lt 3) { $nums+='0' }
+>> "%PS_TAG_FILE%" echo   $pre=1
+>> "%PS_TAG_FILE%" echo   $preNum=0
+>> "%PS_TAG_FILE%" echo   if ($parts.Count -gt 1) { $pre=0; $preParts=$parts[1] -split '\.'; if ($preParts.Count -gt 1 -and $preParts[1] -match '^^[0-9]+') { $preNum=[int]$Matches[0] } }
+>> "%PS_TAG_FILE%" echo   $plain=1
+>> "%PS_TAG_FILE%" echo   if ($tag -like '*-reF1nd*') { $plain=0 }
+>> "%PS_TAG_FILE%" echo   $key=('{0:d3}.{1:d3}.{2:d3}.{3}.{4:d6}.{5}' -f [int]$nums[0],[int]$nums[1],[int]$nums[2],$pre,$preNum,$plain)
+>> "%PS_TAG_FILE%" echo   if ($key -gt $bestKey) { $bestKey=$key; $bestTag=$tag }
+>> "%PS_TAG_FILE%" echo }
+>> "%PS_TAG_FILE%" echo Write-Output $bestTag
+for /f "usebackq delims=" %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -File "%PS_TAG_FILE%"') do (
+    if not defined TAG set "TAG=%%i"
+)
+del /f /q "%PS_TAG_FILE%" >nul 2>nul
 exit /b 0
 
 REM ===================== 主菜单 =====================
