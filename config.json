@@ -345,11 +345,6 @@
 //        "no_drop": true
 //      },
       {
-		"ip_is_private": true,
-		"action": "route",
-        "outbound": "direct"
-      },
-      {
         "type": "logical",
         "mode": "or",
         "rules": [
@@ -361,6 +356,11 @@
           }
         ],
         "action": "hijack-dns"
+      },
+      {
+        "ip_is_private": true,
+        "action": "route",
+        "outbound": "direct"
       },
       {
         "clash_mode": "全局直连",
